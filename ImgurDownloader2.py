@@ -4,15 +4,15 @@ import urllib.request
 import re
 import os
 
-def saveImage(link, author, sub, name, ext):
-    folder = "C:/Users/User/Documents/ImgurBackup/" + sub + "/" + author + "/"
+def saveImage(link, author, sub, name, ext, direct):
+    folder = direct + '\\' + sub + '\\' + author + '\\'
     if not os.path.exists(folder):
         os.makedirs(folder)
     urllib.request.urlretrieve(link, folder + name + ext)
-    
-def saveAlbum(album, author, sub, sub_title):
+
+def saveAlbum(album, author, sub, sub_title, direct):
     counter = 0
-    client = ImgurClient(client_id, client_secret) #Imgur client
+    client = ImgurClient(Im_client_id, Im_client_secret) #Imgur client
     album_data = client.get_album(album) #Whole album
     folderName = album_data.title #album title
 
@@ -22,7 +22,6 @@ def saveAlbum(album, author, sub, sub_title):
     else:
         folderName = folderName.replace(' ', '_')
         folderName = formatName(folderName)
-    #print(folderName)
     print(album)
     images = client.get_album_images(album)
     print(album)
@@ -30,8 +29,8 @@ def saveAlbum(album, author, sub, sub_title):
     for image in images:
         #print(str(image.link))
         #print(str(image.description))
-        
-        folder = "C:/Users/User/Documents/ImgurBackup/" + sub + "/" + author + "/" + str(folderName) + "/"
+
+        folder = direct + '\\' + sub + '\\' + author + '\\' + str(folderName) + '\\'
         #folder  = re.sub('[?/|\:<>*"]', '', folder)
 
         if not os.path.exists(folder):
@@ -39,7 +38,7 @@ def saveAlbum(album, author, sub, sub_title):
 
         writeDescription(image.description, image.id, folder, counter)
 
-        urllib.request.urlretrieve(image.link, folder + "(" + str(counter) + ") " + str(image.id)+'.jpg')
+        urllib.request.urlretrieve(image.link, folder + "(" + str(counter) + ") " + str(image.id) + str(image.type).replace('image/','.'))
 
         counter = counter + 1
 
@@ -54,7 +53,4 @@ def formatName(title):
     if len(title) > 211:
         title = title[:210]
     return title
-'''
-if __name__ == "__main__":
-#Name less than 211 and no special characters
-'''
+	
