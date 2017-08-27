@@ -4,4 +4,6 @@ This project will help you backup subreddits. This downloads and organises image
 
 ## Getting Started
 
-To start add your [imgur](https://imgur.com/account/settings/apps) and [reddit](https://www.reddit.com/prefs/apps/) credentials in the creds.py file.
+To start add your [imgur](https://imgur.com/account/settings/apps) and [reddit](https://www.reddit.com/prefs/apps/) credentials in the creds.py file. 
+
+You also need praw and imgurpython both of which can be installed through pip.
