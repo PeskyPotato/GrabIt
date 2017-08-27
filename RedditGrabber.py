@@ -100,7 +100,6 @@ if __name__ == '__main__':
 
     while True:
         with open(direct + '\\downloaded.txt') as input:
-            global dictionary
             dictionary = set(input.read().split())
         grabber('gonewild', direct)
         count = count + 1
