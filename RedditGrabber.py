@@ -7,6 +7,7 @@ import os
 import time
 import urllib.request, json
 from creds import *
+import socket
 
 reddit = praw.Reddit(client_id = Re_client_id,
                      client_secret= Re_client_secret,
@@ -16,7 +17,7 @@ reddit = praw.Reddit(client_id = Re_client_id,
 dictionary = {}
 
 def grabber(subR, direct):
-    for submission in reddit.subreddit(subR).hot(limit=50):
+    for submission in reddit.subreddit(subR).hot(limit=	250):
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
         title = submission.title
         print('Downloading post:', title.encode('utf-8'), 'From:', str(subR), 'By', str(submission.author))
@@ -70,6 +71,39 @@ def grabber(subR, direct):
                 file.close()
                 print("album")
 
+        elif '.gifv' in link:
+            if link not in dictionary:
+                title = submission.title
+                title = formatName(title)
+                try:
+                    saveImage(link, str(submission.author), str(submission.subreddit), title, '.mp4', direct)
+                except urllib.error.HTTPError:
+                    time.sleep(10)
+                    try:
+                        saveImage(link, str(submission.author), str(submission.subreddit), title, '.mp4', direct)
+                    except urllib.error.HTTPError:
+                        print("Time out", link)
+                with open(direct + '\\downloaded.txt', 'a') as file:
+                    file.write(link + '\n')
+                file.close()
+                print("gifv")
+
+        elif '.gif' in link:
+            if link not in dictionary:
+                print(link)
+                title = submission.title
+                title = formatName(title)
+                try:
+                    saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
+                except urllib.error.URLError:
+                    time.sleep(20)
+                    saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
+
+                with open(direct + '\\downloaded.txt', 'a') as file:
+                    file.write(link + '\n')
+                file.close()
+                print("gif")
+
         elif 'gfycat.com/' in link:
             if link not in dictionary:
                 title = submission.title
@@ -78,8 +112,20 @@ def grabber(subR, direct):
                 requestLink = "http://gfycat.com/cajax/get/" + tag
                 with urllib.request.urlopen(requestLink) as url:
                     data = json.loads(url.read().decode())
-                    gifUrl = data['gfyItem']['gifUrl']
-                saveImage(gifUrl, str(submission.author), str(submission.subreddit), title, '.gif', direct)
+                    try:
+                        gifUrl = data['gfyItem']['gifUrl']
+                    except KeyError:
+                        with open(direct + '\\error.txt', 'a') as logFile:
+                            logFile.write('KeyError: '+ link + '\n')
+                            logFile.close()
+                try:
+                    saveImage(gifUrl, str(submission.author), str(submission.subreddit), title, '.gif', direct)
+                except TypeError:
+                    with open(direct + '\\error.txt', 'a') as logFile:
+                        logFile.write('TypeError: ' + link + '\n')
+                        logFile.close()
+                except UnboundLocalError:
+                    print("oops"    )
                 with open(direct + '\\downloaded.txt', 'a') as file:
                     file.write(link + '\n')
                 file.close()
@@ -88,7 +134,7 @@ def grabber(subR, direct):
             print("reddit")
 
 def formatName(title):
-    title = re.sub('[?/|\:<>*"]', '', title)
+    title = re.sub('[?/|\\\:<>*"]', '', title)
     if len(title) > 211:
         title = title[:210]
     return title
@@ -97,10 +143,12 @@ def formatName(title):
 if __name__ == '__main__':
     count = 0
     direct = os.getcwd()
-
     while True:
         with open(direct + '\\downloaded.txt') as input:
             dictionary = set(input.read().split())
-        grabber('gonewild', direct)
-        count = count + 1
-        print(count)
+        #grabber('60fpsporn', direct)
+        with open("subs.txt") as f:
+            for sub in f:
+                print("********** ",str(sub.split())," **********")
+                grabber(str(sub.strip()), direct)
+                time.sleep(10)
