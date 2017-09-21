@@ -28,7 +28,7 @@ def grabber(subR, direct):
                 title = submission.title
                 title = formatName(title)
                 #folder = "C:/Users/User/Documents/ImgurBackup/" + str(submission.subreddit) + "/" + str(submission.author) + "/"
-                folder = direct + '\\' + str(submission.subreddit) + '\\' + str(submission.author) + '\\'
+                folder = direct + '/' + str(submission.subreddit) + '/' + str(submission.author) + '/'
                 print('folder', folder)
                 if not os.path.exists(folder):
                     os.makedirs(folder)
@@ -36,7 +36,7 @@ def grabber(subR, direct):
                 #file.write(str(submission.author) + '\n')
                 file.write(str(submission.selftext.encode('utf-8')))
                 file.close()
-                with open(direct + '\\downloaded.txt', 'a') as file0:
+                with open(direct + '/downloaded.txt', 'a') as file0:
                     file0.write(link+'\n')
                 file.close()
 
@@ -45,7 +45,7 @@ def grabber(subR, direct):
                 title = submission.title
                 title = formatName(title)
                 saveImage(link, str(submission.author), str(submission.subreddit), title, '.jpg', direct)
-                with open(direct + '\\downloaded.txt', 'a') as file:
+                with open(direct + '/downloaded.txt', 'a') as file:
                     file.write(link + '\n')
                 file.close()
                 print("jpg")
@@ -55,7 +55,7 @@ def grabber(subR, direct):
                 title = submission.title
                 title = formatName(title)
                 saveImage(link, str(submission.author), str(submission.subreddit), title, '.png', direct)
-                with open(direct + '\\downloaded.txt', 'a') as file:
+                with open(direct + 'downloaded.txt', 'a') as file:
                     file.write(link + '\n')
                 file.close()
                 print("png")
@@ -66,7 +66,7 @@ def grabber(subR, direct):
             if albumId not in dictionary:
                 print (link)
                 saveAlbum(albumId, str(submission.author), str(submission.subreddit), submission.title, direct)
-                with open(direct + '\\downloaded.txt', 'a') as file:
+                with open(direct + '/downloaded.txt', 'a') as file:
                     file.write(albumId + '\n')
                 file.close()
                 print("album")
@@ -83,7 +83,7 @@ def grabber(subR, direct):
                         saveImage(link, str(submission.author), str(submission.subreddit), title, '.mp4', direct)
                     except urllib.error.HTTPError:
                         print("Time out", link)
-                with open(direct + '\\downloaded.txt', 'a') as file:
+                with open(direct + '/downloaded.txt', 'a') as file:
                     file.write(link + '\n')
                 file.close()
                 print("gifv")
@@ -99,7 +99,7 @@ def grabber(subR, direct):
                     time.sleep(20)
                     saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
 
-                with open(direct + '\\downloaded.txt', 'a') as file:
+                with open(direct + '/downloaded.txt', 'a') as file:
                     file.write(link + '\n')
                 file.close()
                 print("gif")
@@ -115,18 +115,18 @@ def grabber(subR, direct):
                     try:
                         gifUrl = data['gfyItem']['gifUrl']
                     except KeyError:
-                        with open(direct + '\\error.txt', 'a') as logFile:
+                        with open(direct + '/error.txt', 'a') as logFile:
                             logFile.write('KeyError: '+ link + '\n')
                             logFile.close()
                 try:
                     saveImage(gifUrl, str(submission.author), str(submission.subreddit), title, '.gif', direct)
                 except TypeError:
-                    with open(direct + '\\error.txt', 'a') as logFile:
+                    with open(direct + '/error.txt', 'a') as logFile:
                         logFile.write('TypeError: ' + link + '\n')
                         logFile.close()
                 except UnboundLocalError:
                     print("oops"    )
-                with open(direct + '\\downloaded.txt', 'a') as file:
+                with open(direct + '/downloaded.txt', 'a') as file:
                     file.write(link + '\n')
                 file.close()
                 print('gfycat')
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     count = 0
     direct = os.getcwd()
     while True:
-        with open(direct + '\\downloaded.txt') as input:
+        with open(direct + '/downloaded.txt') as input:
             dictionary = set(input.read().split())
         #grabber('60fpsporn', direct)
         with open("subs.txt") as f:

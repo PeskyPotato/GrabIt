@@ -7,7 +7,7 @@ import os
 import time
 
 def saveImage(link, author, sub, name, ext, direct):
-    folder = direct + '\\' + sub + '\\' + author + '\\'
+    folder = direct + '/' + sub + '/' + author + '/'
     if not os.path.exists(folder):
         os.makedirs(folder)
     try:
@@ -39,7 +39,7 @@ def saveAlbum(album, author, sub, sub_title, direct):
             #print(str(image.link))
             #print(str(image.description))
             print(image.type)
-            folder = direct + '\\' + sub + '\\' + author + '\\' + str(folderName) + '\\'
+            folder = direct + '/' + sub + '/' + author + '/' + str(folderName) + '/'
             #folder  = re.sub('[?/|\:<>*"]', '', folder)
 
             if not os.path.exists(folder):
@@ -51,7 +51,7 @@ def saveAlbum(album, author, sub, sub_title, direct):
 
             counter = counter + 1
     except imgurpython.helpers.error.ImgurClientError:
-        with open(direct + '\\error.txt', 'a') as logFile:
+        with open(direct + '/error.txt', 'a') as logFile:
             logFile.write('ImgurClientError: ' + album + '\n')
             logFile.close()
 
