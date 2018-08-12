@@ -31,15 +31,14 @@ def saveAlbum(album, author, sub, sub_title, direct):
         else:
             folderName = folderName.replace(' ', '_')
             folderName = formatName(folderName)
-        print(album)
         images = client.get_album_images(album)
-        print(album)
 
         for image in images:
             #print(str(image.link))
             #print(str(image.description))
-            print(image.type)
-            folder = direct + '/' + sub + '/' + author + '/' + str(folderName) + '/'
+            #print(image.type)
+            #folder = direct + '/' + sub + '/' + author + '/' + str(folderName) + '/'
+            folder = os.path.join(direct, sub, author, str(folderName))
             #folder  = re.sub('[?/|\:<>*"]', '', folder)
 
             if not os.path.exists(folder):
@@ -47,7 +46,7 @@ def saveAlbum(album, author, sub, sub_title, direct):
 
             writeDescription(image.description, image.id, folder, counter)
 
-            urllib.request.urlretrieve(image.link, folder + "(" + str(counter) + ") " + str(image.id) + str(image.type).replace('image/','.'))
+            urllib.request.urlretrieve(image.link, os.path.join(folder, "(" + str(counter) + ") " + str(image.id) + str(image.type).replace('image/','.')))
 
             counter = counter + 1
     except imgurpython.helpers.error.ImgurClientError:
@@ -56,13 +55,12 @@ def saveAlbum(album, author, sub, sub_title, direct):
             logFile.close()
 
 def writeDescription(description, imageId, folder, counter):
-    name = folder + "(" + str(counter) + ") " + imageId + '.txt'
-    #print(name)
+    name = os.path.join(folder, "(" + str(counter) + ") " + imageId + '.txt')
     file = open(name, 'w+')
     file.write('%s\n' % description)
 
 def formatName(title):
     title = re.sub('[?/|\\\:<>*"]', '', title)
-    if len(title) > 211:
-        title = title[:210]
+    if len(title) > 190:
+        title = title[:120]
     return title

@@ -17,7 +17,7 @@ reddit = praw.Reddit(client_id = Re_client_id,
 dictionary = {}
 
 def grabber(subR, direct):
-    for submission in reddit.subreddit(subR).hot(limit=	250):
+    for submission in reddit.subreddit(subR).hot(limit=	150):
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
         title = submission.title
         print('Downloading post:', title.encode('utf-8'), 'From:', str(subR), 'By', str(submission.author))
@@ -29,7 +29,7 @@ def grabber(subR, direct):
                 title = formatName(title)
                 #folder = "C:/Users/User/Documents/ImgurBackup/" + str(submission.subreddit) + "/" + str(submission.author) + "/"
                 folder = direct + '/' + str(submission.subreddit) + '/' + str(submission.author) + '/'
-                print('folder', folder)
+                #print('folder', folder)
                 if not os.path.exists(folder):
                     os.makedirs(folder)
                 file = open(folder + title + '.txt', 'a')
@@ -60,16 +60,16 @@ def grabber(subR, direct):
                 file.close()
                 print("png")
 
-        elif 'http://imgur.com/a/' in link:
+        elif 'https://imgur.com/a/' in link:
             albumId = link[19:]
-            if len(albumId) > 5: albumId = albumId[:5]
+            #if len(albumId) > 5: albumId = albumId[:5]
             if albumId not in dictionary:
-                print (link)
+                #print (albumId)
                 saveAlbum(albumId, str(submission.author), str(submission.subreddit), submission.title, direct)
                 with open(direct + '/downloaded.txt', 'a') as file:
                     file.write(albumId + '\n')
                 file.close()
-                print("album")
+                #print("album")
 
         elif '.gifv' in link:
             if link not in dictionary:
@@ -131,7 +131,13 @@ def grabber(subR, direct):
                 file.close()
                 print('gfycat')
         elif 'https://www.reddit.com/' in link:
-            print("reddit")
+            with open(direct + '/error.txt', 'a') as logFile:
+                logFile.write('Link to reddit' + link + '\n')
+                logFile.close()
+        else:
+            with open(direct + '/error.txt', 'a') as logFile:
+                logFile.write('No matches' + link + '\n')
+                logFile.close()
 
 def formatName(title):
     title = re.sub('[?/|\\\:<>*"]', '', title)
@@ -139,14 +145,11 @@ def formatName(title):
         title = title[:210]
     return title
 
-#Subreddit to backup goes here
 if __name__ == '__main__':
-    count = 0
     direct = os.getcwd()
     while True:
         with open(direct + '/downloaded.txt') as input:
             dictionary = set(input.read().split())
-        #grabber('60fpsporn', direct)
         with open("subs.txt") as f:
             for sub in f:
                 print("********** ",str(sub.split())," **********")
