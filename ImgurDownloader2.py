@@ -22,7 +22,12 @@ def saveAlbum(album, author, sub, sub_title, direct):
     counter = 0
     client = ImgurClient(Im_client_id, Im_client_secret) #Imgur client
     try:
-        album_data = client.get_album(album) #Whole album
+        try:
+            album_data = client.get_album(album) #Whole album images + data
+        except imgurpython.helpers.error.ImgurClientError: #Album with only one image
+            saveImage('https://imgur.com/' + album + '.jpg', author, sub, sub_title, 'jpg', direct)
+            return
+
         folderName = album_data.title #album title
 
         if not folderName:
@@ -31,22 +36,21 @@ def saveAlbum(album, author, sub, sub_title, direct):
         else:
             folderName = folderName.replace(' ', '_')
             folderName = formatName(folderName)
+
         images = client.get_album_images(album)
 
+
         for image in images:
-            #print(str(image.link))
-            #print(str(image.description))
-            #print(image.type)
-            #folder = direct + '/' + sub + '/' + author + '/' + str(folderName) + '/'
             folder = os.path.join(direct, sub, author, str(folderName))
-            #folder  = re.sub('[?/|\:<>*"]', '', folder)
 
             if not os.path.exists(folder):
                 os.makedirs(folder)
 
             writeDescription(image.description, image.id, folder, counter)
-
-            urllib.request.urlretrieve(image.link, os.path.join(folder, "(" + str(counter) + ") " + str(image.id) + str(image.type).replace('image/','.')))
+            type = image.type
+            type = type.replace('image/', '.')
+            type = type.replace('video/', '.')
+            urllib.request.urlretrieve(image.link, os.path.join(folder, "(" + str(counter) + ") " + str(image.id) + type))
 
             counter = counter + 1
     except imgurpython.helpers.error.ImgurClientError:
