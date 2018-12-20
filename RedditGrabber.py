@@ -13,6 +13,7 @@ import urllib.request,json
 from creds import *
 import argparse
 import signal
+import youtube_dl
 
 '''
 Initialise Reddit
@@ -26,7 +27,6 @@ def grabber(subR, direct, posts):
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
         title = submission.title
         link = submission.url
-
         if(dbWrite(submission.permalink, title, submission.created, submission.author, link)):
         #if(1):
             print('Downloading post:', title.encode('utf-8'), 'From:', str(subR), 'By', str(submission.author))
@@ -109,15 +109,24 @@ def grabber(subR, direct, posts):
                     with open(direct + '/error.txt', 'a') as logFile:
                         logFile.write('UnboundLocalError: '+ link + '\n')
                         logFile.close()
-
             elif 'https://www.reddit.com/' in link:
                 with open(direct + '/error.txt', 'a') as logFile:
                     logFile.write('Link to reddit' + link + '\n')
                     logFile.close()
             else:
-                with open(direct + '/error.txt', 'a') as logFile:
-                    logFile.write('No matches: ' + link + '\n')
-                    logFile.close()
+                folder = direct + '/' + str(submission.subreddit) + '/' + str(submission.author) + '/'
+                ydl_opts = {
+                    'format': 'best',
+                    'outtmpl': folder + '%(title)s-%(id)s.%(ext)s',
+                    'quiet': 'quiet'
+                }
+                try:
+                    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                        ydl.download([link])
+                except youtube_dl.utils.DownloadError:
+                    with open(direct + '/error.txt', 'a') as logFile:
+                        logFile.write('No matches: ' + link + '\n')
+                        logFile.close()
 
 '''
 Removes special characters and shortens long
@@ -159,13 +168,21 @@ if __name__ == '__main__':
     else:
         subR = args.Subreddit
 
-    if args.wait and isinstance(args.wait, int):
-        wait = args.wait
+    if args.wait:
+        try:
+            wait = int(args.wait)
+        except ValueError:
+            print("Please enter an integer in seconds to wait")
+            sys.exit()
     else:
         wait = 600
 
     if args.posts:
-        posts = args.posts
+        try:
+            posts = int(args.posts)
+        except ValueError:
+            print("Please enter an integer for the number of posts")
+            sys.exit()
     else:
         posts = 50
     createTable()
@@ -184,5 +201,5 @@ if __name__ == '__main__':
                     line = f.readline()
         else:
             main(subR, posts)
-        print("waiting")
+        print("Waiting", wait, "seconds.")
         time.sleep(wait)
