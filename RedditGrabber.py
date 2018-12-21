@@ -1,9 +1,8 @@
 import praw
-from ImgurDownloader2 import saveAlbum
-from ImgurDownloader2 import saveImage
-from dbHandler import createTable
-from dbHandler import dbWrite
-#from urllib.request import urlopen
+from handlers.ImgurDownloader2 import saveAlbum
+from handlers.ImgurDownloader2 import saveImage
+from handlers.dbHandler import createTable
+from handlers.dbHandler import dbWrite
 import requests
 import re
 import sys
@@ -29,11 +28,11 @@ def grabber(subR, direct, posts):
         link = submission.url
         if(dbWrite(submission.permalink, title, submission.created, submission.author, link)):
         #if(1):
+            sys.stdout.write("\033[0;32m")
             print('Downloading post:', title.encode('utf-8'), 'From:', str(subR), 'By', str(submission.author))
-
+            title = formatName(submission.title)
+            
             if submission.is_self:
-                title = submission.title
-                title = formatName(title)
                 folder = direct + '/' + str(submission.subreddit) + '/' + str(submission.author) + '/'
                 if not os.path.exists(folder):
                     os.makedirs(folder)
@@ -42,76 +41,43 @@ def grabber(subR, direct, posts):
                 file.close()
 
             elif '.jpg' in link:
-                title = submission.title
-                title = formatName(title)
                 saveImage(link, str(submission.author), str(submission.subreddit), title, '.jpg', direct)
 
             elif '.png' in link:
-                title = submission.title
-                title = formatName(title)
                 saveImage(link, str(submission.author), str(submission.subreddit), title, '.png', direct)
-
-            elif 'imgur.com/' in link:
-                albumId = link.rsplit('/', 1)[-1]
-                if '#' in albumId:
-                    albumId = albumId.rsplit('#', 1)[-2]
-                saveAlbum(albumId, str(submission.author), str(submission.subreddit), submission.title, direct)
-
             elif '.gifv' in link:
-                title = submission.title
-                title = formatName(title)
-                link = link.replace('gifv', 'gif')
+                link = link.replace('gifv', 'mp4')
                 try:
-                    saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
+                    print(title, "1")
+                    saveImage(link, str(submission.author), str(submission.subreddit), title, '.mp4', direct)
                 except urllib.error.HTTPError:
                     time.sleep(10)
                     try:
-                        saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
+                        saveImage(link, str(submission.author), str(submission.subreddit), title, '.mp4', direct)
                     except urllib.error.HTTPError:
                         with open(direct + '/error.txt', 'a') as logFile:
                             logFile.write('HTTPError (timeout): '+ link + '\n')
                             logFile.close()
+            elif 'imgur.com/' in link:
+                albumId = link.rsplit('/', 1)[-1]
+                if '#' in albumId:
+                    albumId = albumId.rsplit('#', 1)[-2]
+                saveAlbum(albumId, str(submission.author), str(submission.subreddit), title, direct)
 
             elif 'giphy.com/gifs' in link:
-                title = submission.title
-                title = formatName(title)
                 link = 'https://media.giphy.com/media/' + link.split('-', 2)[-1] + '/giphy.gif'
                 saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
 
             elif '.gif' in link:
-                title = submission.title
-                title = formatName(title)
                 try:
                     saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
                 except urllib.error.URLError:
                     time.sleep(20)
                     saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
 
-            # elif 'gfycat.com/' in link:
-            #     title = submission.title
-            #     title = formatName(title)
-            #     tag = link.rsplit('/', 1)[-1]
-            #     requestLink = "http://gfycat.com/cajax/get/" + tag
-            #     with urllib.request.urlopen(requestLink) as url:
-            #         data = json.loads(url.read().decode())
-            #         try:
-            #             gifUrl = data['gfyItem']['gifUrl']
-            #         except KeyError:
-            #             with open(direct + '/error.txt', 'a') as logFile:
-            #                 logFile.write('KeyError: '+ link + '\n')
-            #                 logFile.close()
-            #     try:
-            #         saveImage(gifUrl, str(submission.author), str(submission.subreddit), title, '.gif', direct)
-            #     except TypeError:
-            #         gifurl = data['gfyItem']['mobileUrl']
-            #         saveImage(str(data['gfyItem']['mobileUrl']), str(submission.author), str(submission.subreddit), title, '.mp4', direct)
-            #     except UnboundLocalError:
-            #         with open(direct + '/error.txt', 'a') as logFile:
-            #             logFile.write('UnboundLocalError: '+ link + '\n')
-            #             logFile.close()
             elif 'https://www.reddit.com/' in link:
                 with open(direct + '/error.txt', 'a') as logFile:
-                    logFile.write('Link to reddit' + link + '\n')
+                    logFile.write('Link to reddit' + link + ' by ' + str(submission.author) + ' \n')
                     logFile.close()
             else:
                 folder = direct + '/' + str(submission.subreddit) + '/' + str(submission.author) + '/'
@@ -144,7 +110,7 @@ def handler(signum, frame):
 
 def main(subR, posts):
     direct = os.getcwd()
-    sys.stdout.write("\033[0;32m")
+    sys.stdout.write("\033[1;32m")
     print("****", subR, "****")
     grabber(subR, direct, posts)
 
