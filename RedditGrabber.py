@@ -87,28 +87,28 @@ def grabber(subR, direct, posts):
                     time.sleep(20)
                     saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
 
-            elif 'gfycat.com/' in link:
-                title = submission.title
-                title = formatName(title)
-                tag = link.rsplit('/', 1)[-1]
-                requestLink = "http://gfycat.com/cajax/get/" + tag
-                with urllib.request.urlopen(requestLink) as url:
-                    data = json.loads(url.read().decode())
-                    try:
-                        gifUrl = data['gfyItem']['gifUrl']
-                    except KeyError:
-                        with open(direct + '/error.txt', 'a') as logFile:
-                            logFile.write('KeyError: '+ link + '\n')
-                            logFile.close()
-                try:
-                    saveImage(gifUrl, str(submission.author), str(submission.subreddit), title, '.gif', direct)
-                except TypeError:
-                    gifurl = data['gfyItem']['mobileUrl']
-                    saveImage(str(data['gfyItem']['mobileUrl']), str(submission.author), str(submission.subreddit), title, '.mp4', direct)
-                except UnboundLocalError:
-                    with open(direct + '/error.txt', 'a') as logFile:
-                        logFile.write('UnboundLocalError: '+ link + '\n')
-                        logFile.close()
+            # elif 'gfycat.com/' in link:
+            #     title = submission.title
+            #     title = formatName(title)
+            #     tag = link.rsplit('/', 1)[-1]
+            #     requestLink = "http://gfycat.com/cajax/get/" + tag
+            #     with urllib.request.urlopen(requestLink) as url:
+            #         data = json.loads(url.read().decode())
+            #         try:
+            #             gifUrl = data['gfyItem']['gifUrl']
+            #         except KeyError:
+            #             with open(direct + '/error.txt', 'a') as logFile:
+            #                 logFile.write('KeyError: '+ link + '\n')
+            #                 logFile.close()
+            #     try:
+            #         saveImage(gifUrl, str(submission.author), str(submission.subreddit), title, '.gif', direct)
+            #     except TypeError:
+            #         gifurl = data['gfyItem']['mobileUrl']
+            #         saveImage(str(data['gfyItem']['mobileUrl']), str(submission.author), str(submission.subreddit), title, '.mp4', direct)
+            #     except UnboundLocalError:
+            #         with open(direct + '/error.txt', 'a') as logFile:
+            #             logFile.write('UnboundLocalError: '+ link + '\n')
+            #             logFile.close()
             elif 'https://www.reddit.com/' in link:
                 with open(direct + '/error.txt', 'a') as logFile:
                     logFile.write('Link to reddit' + link + '\n')

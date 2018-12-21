@@ -10,6 +10,7 @@ Install [praw](https://praw.readthedocs.io/en/latest/), a Reddit API wrapper, an
 
     pip3 install praw
     pip3 install imgurpython
+    pip3 install youtube_dl
 
 ## Usage and Arguments
 To download from a single subreddit, in this case /r/diy
