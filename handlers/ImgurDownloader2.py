@@ -6,18 +6,35 @@ import re
 import os
 import time
 
-def saveImage(link, author, sub, name, ext, direct):
+retry_counter = 5
+
+'''
+Saves individual images into the assigned directory.
+If a URLError occurs it retries five times before logging
+the error.
+'''
+def saveImage(link, author, sub, name, ext, direct, counter = 1):
     folder = direct + '/' + sub + '/' + author + '/'
     if not os.path.exists(folder):
         os.makedirs(folder)
     try:
         urllib.request.urlretrieve(link, folder + name + ext)
     except urllib.error.URLError:
-        time.sleep(20)
-        try:
-            urllib.request.urlretrieve(link, folder + name + ext)
-        except:
-            pass
+        if retry_counter > counter:
+            time.sleep(60)
+            counter += 1
+            saveImage(link, author, sub, name, ext, direct, counter)
+        else:
+            with open(direct + '/error.txt', 'a') as logFile:
+                logFile.write('urllib.error.URLERROR: ' + link + '\n')
+                logFile.close()
+
+
+'''
+Saves entire imgur albums into the assigned directory.
+Writes the descrption to a text file if there is one. Retries
+five times if a URLError occurs before logging the error.
+'''
 def saveAlbum(album, author, sub, sub_title, direct):
     counter = 0
     client = ImgurClient(Im_client_id, Im_client_secret) #Imgur client
@@ -50,18 +67,34 @@ def saveAlbum(album, author, sub, sub_title, direct):
             type = image.type
             type = type.replace('image/', '.')
             type = type.replace('video/', '.')
-            urllib.request.urlretrieve(image.link, os.path.join(folder, "(" + str(counter) + ") " + str(image.id) + type))
 
-            counter = counter + 1
+            counter_ = 0
+            while (True):
+                try:
+                    urllib.request.urlretrieve(image.link, os.path.join(folder, "(" + str(counter) + ") " + str(image.id) + type))
+                except urllib.error.URLError:
+                    counter_ += 1
+                    if retry_counter > counter_:
+                        pass
+                    else:
+                        with open(direct + '/error.txt', 'a') as logFile:
+                            logFile.write('urllib.error.URLERROR: ' + link + '\n')
+                            logFile.close()
+                        break
+                break
+                
+            counter += 1
+
     except imgurpython.helpers.error.ImgurClientError:
         with open(direct + '/error.txt', 'a') as logFile:
             logFile.write('ImgurClientError: ' + album + '\n')
             logFile.close()
 
 def writeDescription(description, imageId, folder, counter):
-    name = os.path.join(folder, "(" + str(counter) + ") " + imageId + '.txt')
-    file = open(name, 'w+')
-    file.write('%s\n' % description)
+    if description != None:
+        name = os.path.join(folder, "(" + str(counter) + ") " + imageId + '.txt')
+        file = open(name, 'w+')
+        file.write('%s\n' % description)
 
 def formatName(title):
     title = re.sub('[?/|\\\:<>*"]', '', title)

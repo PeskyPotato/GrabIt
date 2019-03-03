@@ -23,15 +23,14 @@ reddit = praw.Reddit(client_id = Re_client_id,
 
 def grabber(subR, direct, posts):
     for submission in reddit.subreddit(subR).hot(limit = int(posts)):
-        non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
         title = submission.title
         link = submission.url
         if(dbWrite(submission.permalink, title, submission.created, submission.author, link)):
         #if(1):
-            sys.stdout.write("\033[0;32m")
             print('Downloading post:', title.encode('utf-8'), 'From:', str(subR), 'By', str(submission.author))
             title = formatName(submission.title)
             
+            # Is a selftext post
             if submission.is_self:
                 folder = direct + '/' + str(submission.subreddit) + '/' + str(submission.author) + '/'
                 if not os.path.exists(folder):
@@ -39,16 +38,15 @@ def grabber(subR, direct, posts):
                 file = open(folder + title + '.txt', 'a')
                 file.write(str(submission.selftext.encode('utf-8')))
                 file.close()
-
+            
+            # Link to a jpg, png, giv
             elif '.jpg' in link:
                 saveImage(link, str(submission.author), str(submission.subreddit), title, '.jpg', direct)
-
             elif '.png' in link:
                 saveImage(link, str(submission.author), str(submission.subreddit), title, '.png', direct)
             elif '.gifv' in link:
                 link = link.replace('gifv', 'mp4')
                 try:
-                    print(title, "1")
                     saveImage(link, str(submission.author), str(submission.subreddit), title, '.mp4', direct)
                 except urllib.error.HTTPError:
                     time.sleep(10)
@@ -58,16 +56,22 @@ def grabber(subR, direct, posts):
                         with open(direct + '/error.txt', 'a') as logFile:
                             logFile.write('HTTPError (timeout): '+ link + '\n')
                             logFile.close()
+            
+            # Imgur album
             elif 'imgur.com/' in link:
                 albumId = link.rsplit('/', 1)[-1]
                 if '#' in albumId:
                     albumId = albumId.rsplit('#', 1)[-2]
+
                 saveAlbum(albumId, str(submission.author), str(submission.subreddit), title, direct)
 
+            # Giphy
             elif 'giphy.com/gifs' in link:
                 link = 'https://media.giphy.com/media/' + link.split('-', 2)[-1] + '/giphy.gif'
+
                 saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
 
+            # Gif post
             elif '.gif' in link:
                 try:
                     saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
@@ -75,10 +79,13 @@ def grabber(subR, direct, posts):
                     time.sleep(20)
                     saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
 
+            # Link to another reddit submission
             elif 'https://www.reddit.com/' in link:
                 with open(direct + '/error.txt', 'a') as logFile:
                     logFile.write('Link to reddit' + link + ' by ' + str(submission.author) + ' \n')
                     logFile.close()
+            
+            # All others are caught by youtube-dl, if still no match it's written to the log file
             else:
                 folder = direct + '/' + str(submission.subreddit) + '/' + str(submission.author) + '/'
                 ydl_opts = {
