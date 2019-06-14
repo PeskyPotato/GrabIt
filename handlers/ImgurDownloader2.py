@@ -1,4 +1,3 @@
-from imgurpython import ImgurClient
 import imgurpython
 from creds import *
 import urllib.request
@@ -10,7 +9,7 @@ retry_counter = 5
 
 '''
 Saves individual images into the assigned directory.
-If a URLError occurs it retries five times before logging
+If a URLError or HTTPError occurs it retries before logging
 the error.
 '''
 def saveImage(link, author, sub, name, ext, direct, counter = 1):
@@ -19,14 +18,15 @@ def saveImage(link, author, sub, name, ext, direct, counter = 1):
         os.makedirs(folder)
     try:
         urllib.request.urlretrieve(link, folder + name + ext)
-    except urllib.error.URLError:
+    except (urllib.error.URLError, urllib.error.HTTPError) as err:
         if retry_counter > counter:
+            print(err, "retrying", counter, link)
             time.sleep(60)
             counter += 1
             saveImage(link, author, sub, name, ext, direct, counter)
         else:
-            with open(direct + '/error.txt', 'a') as logFile:
-                logFile.write('urllib.error.URLERROR: ' + link + '\n')
+            with open(direct + '/error.txt', 'a+') as logFile:
+                logFile.write('{}: {}\n'.format(err, link))
                 logFile.close()
 
 
@@ -37,7 +37,7 @@ five times if a URLError occurs before logging the error.
 '''
 def saveAlbum(album, author, sub, sub_title, direct):
     counter = 0
-    client = ImgurClient(Im_client_id, Im_client_secret) #Imgur client
+    client = imgurpython.ImgurClient(Im_client_id, Im_client_secret) #Imgur client
     try:
         try:
             album_data = client.get_album(album) #Whole album images + data
