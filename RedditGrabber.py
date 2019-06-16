@@ -1,5 +1,5 @@
 import praw
-from handlers.ImgurDownloader2 import saveAlbum, saveImage
+from handlers.ImgurDownloader import saveAlbum, saveImage
 from handlers.dbHandler import createTable, dbWrite
 import requests
 import re
@@ -23,7 +23,7 @@ reddit = praw.Reddit(client_id = Re_client_id,
                      client_secret= Re_client_secret,
                      user_agent= Re_user_agent)
 
-def grabber(subR, direct, posts):
+def grabber(subR, base_dir, posts):
     for submission in reddit.subreddit(subR).hot(limit = int(posts)):
         title = submission.title
         link = submission.url
@@ -35,56 +35,48 @@ def grabber(subR, direct, posts):
             
             # Selftext post
             if submission.is_self:
-                folder = direct + '/' + str(submission.subreddit) + '/' + str(submission.author) + '/'
+                folder = os.path.join(base_dir, str(submission.subreddit), str(submission.author))
                 if not os.path.exists(folder):
                     os.makedirs(folder)
-                file = open(folder + title + '.txt', 'a')
-                file.write(str(submission.selftext.encode('utf-8')))
-                file.close()
-            
+                with open(os.path.join(folder, title + '.txt'), 'a+') as f:
+                    f.write(str(submission.selftext.encode('utf-8')))
+
             # Link to a jpg, png, giv, gif
-            elif '.jpg' in link:
-                saveImage(link, str(submission.author), str(submission.subreddit), title, '.jpg', direct)
-            elif '.png' in link:
-                saveImage(link, str(submission.author), str(submission.subreddit), title, '.png', direct)
-            elif '.gifv' in link:
-                saveImage(link.replace('gifv', 'mp4'), str(submission.author), str(submission.subreddit), title, '.mp4', direct)
-            elif '.gif' in link:
-                saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
-            
+            elif any(ext in link for ext in ['.jpg', '.png', '.gif', 'gifv']):
+                saveImage(link, str(submission.author), str(submission.subreddit), title, base_dir)
+
             # Imgur album
             elif 'imgur.com/' in link:
                 albumId = link.rsplit('/', 1)[-1]
                 if '#' in albumId:
                     albumId = albumId.rsplit('#', 1)[-2]
-                saveAlbum(albumId, str(submission.author), str(submission.subreddit), title, direct)
+                saveAlbum(albumId, str(submission.author), str(submission.subreddit), title, base_dir)
 
             # Giphy
             elif 'giphy.com/gifs' in link:
                 link = 'https://media.giphy.com/media/' + link.split('-', 2)[-1] + '/giphy.gif'
-                saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', direct)
+                saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', base_dir)
 
             # Link to another reddit submission
             elif 'reddit.com/r/' in link:
-                with open(direct + '/error.txt', 'a+') as logFile:
+                with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
                     logFile.write('Link to reddit' + link + ' by ' + str(submission.author) + ' \n')
                     logFile.close()
             
             # All others are caught by youtube-dl, if still no match it's written to the log file
             else:
-                folder = direct + '/' + str(submission.subreddit) + '/' + str(submission.author) + '/'
+                folder = os.path.join(base_dir, str(submission.subreddit), str(submission.author))
                 ydl_opts = {
                     'format': 'best',
-                    'outtmpl': folder + '%(title)s-%(id)s.%(ext)s',
+                    'outtmpl': os.path.join(folder, '%(title)s-%(id)s.%(ext)s'),
                     'quiet': 'quiet'
                 }
                 try:
                     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                         ydl.download([link])
                 except youtube_dl.utils.DownloadError:
-                    with open(direct + '/error.txt', 'a+') as logFile:
+                    with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
                         logFile.write('No matches: ' + link + '\n')
-                        logFile.close()
 
 '''
 Removes special characters and shortens long
@@ -92,14 +84,12 @@ filenames
 '''
 def formatName(title):
     title = re.sub('[?/|\\\:<>*"]', '', title)
-    if len(title) > 211:
-        title = title[:210]
+    if len(title) > 211: title = title[:210]
     return title
 
-def main(subR, posts):
-    direct = os.getcwd()
+def main(subR, posts, base_dir):
     print(color.BOLD, "****", subR, "****", color.END)
-    grabber(subR, direct, posts)
+    grabber(subR, base_dir, posts)
 
 if __name__ == '__main__':
     '''
@@ -109,6 +99,7 @@ if __name__ == '__main__':
     parser.add_argument("Subreddit", help = "Enter a subreddit to backup or text file")
     parser.add_argument("-w", "--wait", help = "Change wait time between subreddits in seconds")
     parser.add_argument("-p", "--posts", help = "Number of posts to grab on each cycle")
+    parser.add_argument("-o", "--output", help = "Set base directory to start download")
 
     args = parser.parse_args()
 
@@ -139,6 +130,12 @@ if __name__ == '__main__':
     else:
         posts = 50
     
+    if args.output:
+        base_dir = os.path.abspath(args.output)
+        if not os.path.exists(base_dir): os.makedirs(base_dir)
+    else:
+        base_dir = os.getcwd()
+
     createTable()
 
     '''
@@ -150,9 +147,9 @@ if __name__ == '__main__':
                 line = f.readline()
                 while line:
                     subR = "{}".format(line.strip())
-                    main(subR, posts)
+                    main(subR, posts, base_dir)
                     line = f.readline()
         else:
-            main(subR, posts)
+            main(subR, posts, base_dir)
         print(color.BOLD, "Waiting", wait, "seconds.", color.END)
         time.sleep(wait)
