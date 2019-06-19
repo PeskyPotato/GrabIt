@@ -23,8 +23,15 @@ reddit = praw.Reddit(client_id = Re_client_id,
                      client_secret= Re_client_secret,
                      user_agent= Re_user_agent)
 
-def grabber(subR, base_dir, posts):
-    for submission in reddit.subreddit(subR).hot(limit = int(posts)):
+def grabber(subR, base_dir, posts, sort):
+    if sort == 'hot':
+        submissions = reddit.subreddit(subR).hot(limit = int(posts))
+    elif sort == 'new':
+        submissions = reddit.subreddit(subR).new(limit = int(posts))
+    elif sort == 'top':
+        submissions = reddit.subreddit(subR).top(limit = int(posts))
+
+    for submission in submissions:
         title = submission.title
         link = submission.url
         if(dbWrite(submission.permalink, title, submission.created, submission.author, link)):
@@ -87,9 +94,9 @@ def formatName(title):
     if len(title) > 211: title = title[:210]
     return title
 
-def main(subR, posts, base_dir):
+def main(subR, posts, base_dir, sort):
     print(color.BOLD, "****", subR, "****", color.END)
-    grabber(subR, base_dir, posts)
+    grabber(subR, base_dir, posts, sort)
 
 if __name__ == '__main__':
     '''
@@ -100,18 +107,19 @@ if __name__ == '__main__':
     parser.add_argument("-w", "--wait", help = "Change wait time between subreddits in seconds")
     parser.add_argument("-p", "--posts", help = "Number of posts to grab on each cycle")
     parser.add_argument("-o", "--output", help = "Set base directory to start download")
+    parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
 
     args = parser.parse_args()
 
     subR = None
     filepath = None
     verb = False
+    
+    # Subreddit
+    if '.txt' in args.Subreddit: filepath = args.Subreddit
+    else: subR = args.Subreddit
 
-    if '.txt' in args.Subreddit:
-        filepath = args.Subreddit
-    else:
-        subR = args.Subreddit
-
+    # wait
     if args.wait:
         try:
             wait = int(args.wait)
@@ -121,6 +129,7 @@ if __name__ == '__main__':
     else:
         wait = 600
 
+    # posts
     if args.posts:
         try:
             posts = int(args.posts)
@@ -130,11 +139,20 @@ if __name__ == '__main__':
     else:
         posts = 50
     
+    # output
     if args.output:
         base_dir = os.path.abspath(args.output)
         if not os.path.exists(base_dir): os.makedirs(base_dir)
     else:
         base_dir = os.getcwd()
+
+    # sort
+    sort = 'hot'
+    if args.sort and (args.sort.lower() == 'hot' or args.sort.lower() == 'new' or args.sort.lower() == 'top'):
+        sort = args.sort
+    elif args.sort:
+        print("Please enter hot, new or top for sort")
+        sys.exit()
 
     createTable()
 
@@ -147,9 +165,9 @@ if __name__ == '__main__':
                 line = f.readline()
                 while line:
                     subR = "{}".format(line.strip())
-                    main(subR, posts, base_dir)
+                    main(subR, posts, base_dir, sort)
                     line = f.readline()
         else:
-            main(subR, posts, base_dir)
+            main(subR, posts, base_dir, sort)
         print(color.BOLD, "Waiting", wait, "seconds.", color.END)
         time.sleep(wait)
