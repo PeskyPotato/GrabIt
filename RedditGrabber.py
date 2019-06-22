@@ -10,18 +10,16 @@ import urllib.request,json
 from creds import *
 import argparse
 import youtube_dl
+import json
 
 class color:
    RED = '\033[91m'
    BOLD = '\033[1m'
    END = '\033[0m'
 
-'''
-Initialise Reddit
-'''
-reddit = praw.Reddit(client_id = Re_client_id,
-                     client_secret= Re_client_secret,
-                     user_agent= Re_user_agent)
+with open('./resources/config.json') as f:
+    config = json.load(f)
+
 
 def grabber(subR, base_dir, posts, sort):
     if sort == 'hot':
@@ -34,7 +32,7 @@ def grabber(subR, base_dir, posts, sort):
     for submission in submissions:
         title = submission.title
         link = submission.url
-        if(dbWrite(submission.permalink, title, submission.created, submission.author, link)):
+        if(dbWrite(submission.permalink, title, submission.created, submission.author, link) and not(submission.author in config["blacklist"])):
         #if(1):
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
             print('{}Post:{} {}... {}From:{} {} {}By:{} {}'.format(color.BOLD, color.END, print_title, color.BOLD, color.END, str(subR), color.BOLD, color.END, str(submission.author)))
@@ -94,6 +92,11 @@ def formatName(title):
     if len(title) > 211: title = title[:210]
     return title
 
+def reload_config():
+    print(config)
+    with open('./resources/config.json', 'w') as f:
+        json.dump(config, f)
+
 def main(subR, posts, base_dir, sort):
     print(color.BOLD, "****", subR, "****", color.END)
     grabber(subR, base_dir, posts, sort)
@@ -108,6 +111,7 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--posts", help = "Number of posts to grab on each cycle")
     parser.add_argument("-o", "--output", help = "Set base directory to start download")
     parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
+    parser.add_argument("--blacklist", help = "Avoid downloading a user, without /u/")
 
     args = parser.parse_args()
 
@@ -153,8 +157,20 @@ if __name__ == '__main__':
     elif args.sort:
         print("Please enter hot, new or top for sort")
         sys.exit()
+    
+    # blacklist
+    if args.blacklist:
+        config["blacklist"].append(args.blacklist)
+        reload_config()
 
     createTable()
+
+    '''
+    Initialise Reddit
+    '''
+    reddit = praw.Reddit(client_id = Re_client_id,
+                        client_secret= Re_client_secret,
+                        user_agent= Re_user_agent)
 
     '''
     Feed subreddits to main

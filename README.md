@@ -29,3 +29,6 @@ Below are some optional arguments that you can use:
     -o OUTPUT, --output OUTPUT 
                         Set base directory to start download
     --sort SORT           Sort submissions by 'hot', 'new' or 'top'
+    --blacklist BLACKLIST
+                        Avoid downloading a user, without /u/
+
