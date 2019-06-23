@@ -22,12 +22,16 @@ with open('./resources/config.json') as f:
         config = json.load(f)
 
 def grabber(subR, base_dir, posts, sort):
-    if sort == 'hot':
-        submissions = reddit.subreddit(subR).hot(limit = int(posts))
-    elif sort == 'new':
-        submissions = reddit.subreddit(subR).new(limit = int(posts))
-    elif sort == 'top':
-        submissions = reddit.subreddit(subR).top(limit = int(posts))
+    if 'u/' in subR or '/u/' in subR:
+        if '/u/' in subR: subR = subR[3:]
+        elif 'u/'in subR: subR = subR[2:]
+        if sort == 'hot': submissions = reddit.redditor(subR).submissions.hot(limit = int(posts))
+        elif sort == 'new': submissions = reddit.redditor(subR).submissions.new(limit = int(posts))
+        elif sort =='top': submissions = reddit.redditor(subR).submissions.top(limit = int(posts))
+    else:
+        if sort == 'hot': submissions = reddit.subreddit(subR).hot(limit = int(posts))
+        elif sort == 'new': submissions = reddit.subreddit(subR).new(limit = int(posts))
+        elif sort == 'top': submissions = reddit.subreddit(subR).top(limit = int(posts))
 
     for submission in submissions:
         title = submission.title

@@ -1,8 +1,8 @@
 # RedditImageBackup
 
-This project will help you backup subreddits. This downloads and organises images, self posts, gifs and videos by subreddit and user.
+RedditImageBackup is a tool built to archive self-posts, images, gifs and videos from subreddit and users. This program works through the command line and uses Python 3.
 
-## Getting Started
+## Installation
 
 Add your [imgur](https://imgur.com/account/settings/apps) and [reddit](https://www.reddit.com/prefs/apps/) credentials in the `creds.py` file.
 
@@ -15,11 +15,15 @@ To download from a single subreddit, in this case /r/diy
 
     python3 RedditGrabber.py diy
 
-You can also pass in a list of subreddits in the form of a txt file, with contains each subreddit on a newline.
+You can also pass in a list of subreddits and users in the form of a txt file, with contains each subreddit on a newline.
 
     python3 RedditGrabber.py subs.txt
 
-Below are some optional arguments that you can use:
+This downloads the first 50 new submission from the user /u/spez and stores they by user then subreddit(i.e. spez/<subreddit>/<media>).
+
+    python3 RedditGrabber.py /u/spez --by_author --posts 50 --sort new
+
+Below are all the optional arguments that you can use:
 
     -h, --help            show this help message and exit
 
