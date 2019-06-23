@@ -1,6 +1,7 @@
 import praw
 from handlers.ImgurDownloader import saveAlbum, saveImage
 from handlers.dbHandler import createTable, dbWrite
+from save import Save
 import requests
 import re
 import sys
@@ -18,8 +19,7 @@ class color:
    END = '\033[0m'
 
 with open('./resources/config.json') as f:
-    config = json.load(f)
-
+        config = json.load(f)
 
 def grabber(subR, base_dir, posts, sort):
     if sort == 'hot':
@@ -40,27 +40,24 @@ def grabber(subR, base_dir, posts, sort):
             
             # Selftext post
             if submission.is_self:
-                folder = os.path.join(base_dir, str(submission.subreddit), str(submission.author))
-                if not os.path.exists(folder):
-                    os.makedirs(folder)
-                with open(os.path.join(folder, title + '.txt'), 'a+') as f:
+                with open(os.path.join(save.get_dir(str(submission.author), str(submission.subreddit)), title + '.txt'), 'a+') as f:
                     f.write(str(submission.selftext.encode('utf-8')))
 
             # Link to a jpg, png, giv, gif
             elif any(ext in link for ext in ['.jpg', '.png', '.gif', 'gifv']):
-                saveImage(link, str(submission.author), str(submission.subreddit), title, base_dir)
+                saveImage(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Imgur album
             elif 'imgur.com/' in link:
                 albumId = link.rsplit('/', 1)[-1]
                 if '#' in albumId:
                     albumId = albumId.rsplit('#', 1)[-2]
-                saveAlbum(albumId, str(submission.author), str(submission.subreddit), title, base_dir)
+                saveAlbum(albumId, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Giphy
             elif 'giphy.com/gifs' in link:
                 link = 'https://media.giphy.com/media/' + link.split('-', 2)[-1] + '/giphy.gif'
-                saveImage(link, str(submission.author), str(submission.subreddit), title, '.gif', base_dir)
+                saveImage(link, title, '.gif', save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Link to another reddit submission
             elif 'reddit.com/r/' in link:
@@ -70,7 +67,7 @@ def grabber(subR, base_dir, posts, sort):
             
             # All others are caught by youtube-dl, if still no match it's written to the log file
             else:
-                folder = os.path.join(base_dir, str(submission.subreddit), str(submission.author))
+                folder = save.get_dir(str(submission.author), str(submission.subreddit))
                 ydl_opts = {
                     'format': 'best',
                     'outtmpl': os.path.join(folder, '%(title)s-%(id)s.%(ext)s'),
@@ -92,12 +89,9 @@ def formatName(title):
     if len(title) > 211: title = title[:210]
     return title
 
-def reload_config():
-    print(config)
-    with open('./resources/config.json', 'w') as f:
-        json.dump(config, f)
-
 def main(subR, posts, base_dir, sort):
+    with open('./resources/config.json') as f:
+        config = json.load(f)
     print(color.BOLD, "****", subR, "****", color.END)
     grabber(subR, base_dir, posts, sort)
 
@@ -110,6 +104,7 @@ if __name__ == '__main__':
     parser.add_argument("-w", "--wait", help = "Change wait time between subreddits in seconds")
     parser.add_argument("-p", "--posts", help = "Number of posts to grab on each cycle")
     parser.add_argument("-o", "--output", help = "Set base directory to start download")
+    parser.add_argument("--by_author", help = "Sort downloads by author, default by subreddit", action = "store_true")
     parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
     parser.add_argument("--blacklist", help = "Avoid downloading a user, without /u/")
 
@@ -161,8 +156,13 @@ if __name__ == '__main__':
     # blacklist
     if args.blacklist:
         config["blacklist"].append(args.blacklist)
-        reload_config()
+        with open('./resources/config.json', 'w') as f:
+            json.dump(config, f)
 
+    # by_author
+    save = Save(base_dir, args.by_author)
+    # print(save.get_dir('author', 'sub'))
+    # sys.exit()
     createTable()
 
     '''

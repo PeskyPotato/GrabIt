@@ -12,28 +12,28 @@ Saves individual images into the assigned directory.
 If a URLError or HTTPError occurs it retries before logging
 the error.
 '''
-def saveImage(link, author, sub, name, direct, counter = 1):
+def saveImage(link, name, direct, counter = 1):
     if 'gifv' in link:
         ext = '.mp4'
         link = link.replace('gifv', 'mp4')
     else:
         ext = re.search('jpg|png|gif', link).group()
-
-    folder = os.path.join(direct, sub, author)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    
     try:
-        urllib.request.urlretrieve(link, os.path.join(folder,  name + ext))
+        urllib.request.urlretrieve(link, os.path.join(direct,  name + ext))
     except (urllib.error.URLError, urllib.error.HTTPError) as err:
         if retry_counter > counter:
             print(err, "retrying", counter, link)
             time.sleep(60)
             counter += 1
-            saveImage(link, author, sub, name, ext, direct, counter)
+            saveImage(link, name, direct, counter)
         else:
             with open(os.path.join(direct, 'error.txt'), 'a+') as logFile:
                 logFile.write('{}: {}\n'.format(err, link))
+    except FileNotFoundError as err:
+        # this means album was not found, fix pending
+        with open(os.path.join(direct, 'error.txt'), 'a+') as logFile:
+            logFile.write('{}: {}\n'.format(err, link))
+            
 
 
 '''
@@ -41,30 +41,27 @@ Saves entire imgur albums into the assigned directory.
 Writes the descrption to a text file if there is one. Retries
 five times if a URLError occurs before logging the error.
 '''
-def saveAlbum(album, author, sub, sub_title, direct):
+def saveAlbum(album, sub_title, direct):
     counter = 0
     client = imgurpython.ImgurClient(Im_client_id, Im_client_secret) #Imgur client
     try:
         try:
             album_data = client.get_album(album) #Whole album images + data
         except imgurpython.helpers.error.ImgurClientError: #Album with only one image
-            saveImage('https://imgur.com/' + album + '.jpg', author, sub, sub_title, 'jpg', direct)
+            saveImage('https://imgur.com/' + album + '.jpg', sub_title, direct)
             return
 
         folderName = album_data.title #album title
 
         if not folderName:
-            folderName = sub_title + " - " + str(album)
-            folderName = formatName(folderName)
+            folderName = formatName(sub_title + " - " + str(album))
         else:
-            folderName = folderName.replace(' ', '_')
-            folderName = formatName(folderName)
+            folderName = formatName(folderName.replace(' ', '_'))
 
         images = client.get_album_images(album)
 
-
         for image in images:
-            folder = os.path.join(direct, sub, author, str(folderName))
+            folder = os.path.join(direct, str(folderName))
 
             if not os.path.exists(folder):
                 os.makedirs(folder)

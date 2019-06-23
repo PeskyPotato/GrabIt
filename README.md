@@ -1,6 +1,6 @@
 # RedditImageBackup
 
-This project will help you backup subreddits. This downloads and organises images, self posts, gifs and videos by subreddit then user.
+This project will help you backup subreddits. This downloads and organises images, self posts, gifs and videos by subreddit and user.
 
 ## Getting Started
 
@@ -28,7 +28,7 @@ Below are some optional arguments that you can use:
                         Number of posts to grab on each cycle
     -o OUTPUT, --output OUTPUT 
                         Set base directory to start download
+    --by_author           Sort downloads by author, default by subreddit
     --sort SORT           Sort submissions by 'hot', 'new' or 'top'
     --blacklist BLACKLIST
                         Avoid downloading a user, without /u/
-
