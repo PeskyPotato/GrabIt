@@ -1,5 +1,8 @@
 import praw
-from handlers.ImgurDownloader import saveAlbum, saveImage
+from handlers.ImgurDownloader import saveImage
+import  resources.handlers.common
+from resources.handlers.imgur import Imgur
+from resources.handlers.common import Common
 from handlers.dbHandler import createTable, dbWrite
 from save import Save
 import requests
@@ -47,23 +50,26 @@ def grabber(subR, base_dir, posts, sort):
                 with open(os.path.join(save.get_dir(str(submission.author), str(submission.subreddit)), title + '.txt'), 'a+') as f:
                     f.write(str(submission.selftext.encode('utf-8')))
 
-            # Link to a jpg, png, giv, gif
-            elif any(ext in link for ext in ['.jpg', '.png', '.gif', 'gifv']):
-                saveImage(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
+            # Link to a jpg, png, gifv, gif, jpeg
+            elif any(ext in link for ext in ['.jpg', '.png', '.gif', 'gifv', 'jpeg']) or 'i.reddituploads.com' in link:
+                Common(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
-            # Imgur album
+            # Imgur
             elif 'imgur.com/' in link:
-                albumId = link.rsplit('/', 1)[-1]
-                if '#' in albumId:
-                    albumId = albumId.rsplit('#', 1)[-2]
-                saveAlbum(albumId, title, save.get_dir(str(submission.author), str(submission.subreddit)))
+                 Imgur(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Giphy
             elif 'giphy.com/gifs' in link:
                 link = 'https://media.giphy.com/media/' + link.split('-', 2)[-1] + '/giphy.gif'
                 saveImage(link, title, '.gif', save.get_dir(str(submission.author), str(submission.subreddit)))
 
-            # Link to another reddit submission
+            # Flickr
+            elif 'flickr.com/' in link:
+                print("No Flickr support")
+                with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
+                        logFile.write('Needs support: ' + link + '\n')
+
+            # Reddit submission
             elif 'reddit.com/r/' in link:
                 with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
                     logFile.write('Link to reddit' + link + ' by ' + str(submission.author) + ' \n')

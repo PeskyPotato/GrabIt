@@ -4,9 +4,9 @@ RedditImageBackup is a tool built to archive self-posts, images, gifs and videos
 
 ## Installation
 
-Add your [imgur](https://imgur.com/account/settings/apps) and [reddit](https://www.reddit.com/prefs/apps/) credentials in the `creds.py` file.
+Add your [reddit](https://www.reddit.com/prefs/apps/) credentials in the `creds.py` file.
 
-Install [praw](https://praw.readthedocs.io/en/latest/), a Reddit API wrapper, [imgurpython](https://github.com/Imgur/imgurpython), a Python client for the Imgur API and [youtube_dl](https://pypi.org/project/youtube_dl/), a CLI program to download audio, videos and gifs.
+Install [praw](https://praw.readthedocs.io/en/latest/), a Reddit API wrapper and [youtube_dl](https://pypi.org/project/youtube_dl/), a CLI program to download audio, videos and gifs.
 
     pip install -r requirements.txt
 
