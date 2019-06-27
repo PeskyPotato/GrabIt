@@ -1,20 +1,18 @@
 import praw
-from handlers.ImgurDownloader import saveImage
-import  resources.handlers.common
-from resources.handlers.imgur import Imgur
-from resources.handlers.common import Common
-from handlers.dbHandler import createTable, dbWrite
-from save import Save
-import requests
 import re
 import sys
 import os
 import time
-import urllib.request,json
 from creds import *
 import argparse
 import youtube_dl
 import json
+
+from resources.handlers.giphy import Giphy
+from resources.handlers.imgur import Imgur
+from resources.handlers.common import Common
+from resources.save import Save
+from handlers.dbHandler import createTable, dbWrite
 
 class color:
    RED = '\033[91m'
@@ -40,7 +38,6 @@ def grabber(subR, base_dir, posts, sort):
         title = submission.title
         link = submission.url
         if(dbWrite(submission.permalink, title, submission.created, submission.author, link) and not(submission.author in config["blacklist"])):
-        #if(1):
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
             print('{}Post:{} {}... {}From:{} {} {}By:{} {}'.format(color.BOLD, color.END, print_title, color.BOLD, color.END, str(subR), color.BOLD, color.END, str(submission.author)))
             title = formatName(title)
@@ -60,8 +57,7 @@ def grabber(subR, base_dir, posts, sort):
 
             # Giphy
             elif 'giphy.com/gifs' in link:
-                link = 'https://media.giphy.com/media/' + link.split('-', 2)[-1] + '/giphy.gif'
-                saveImage(link, title, '.gif', save.get_dir(str(submission.author), str(submission.subreddit)))
+                Giphy(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Flickr
             elif 'flickr.com/' in link:

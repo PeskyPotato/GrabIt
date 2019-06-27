@@ -9,7 +9,7 @@ class Imgur(Common):
     def __init__(self, link, name, direct):
         super().__init__(link, name, direct)
         self.data = {}
-        self.save()
+        # self.save()
 
     def save(self):
         self.sanitize_url()
