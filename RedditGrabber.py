@@ -8,6 +8,7 @@ import argparse
 import youtube_dl
 import json
 
+from resources.handlers.tenor import Tenor
 from resources.handlers.giphy import Giphy
 from resources.handlers.imgur import Imgur
 from resources.handlers.common import Common
@@ -36,7 +37,7 @@ def grabber(subR, base_dir, posts, sort):
 
     for submission in submissions:
         title = submission.title
-        link = submission.url
+        link = re.sub("\?(.)+", "", submission.url)
         if(dbWrite(submission.permalink, title, submission.created, submission.author, link) and not(submission.author in config["blacklist"])):
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
             print('{}Post:{} {}... {}From:{} {} {}By:{} {}'.format(color.BOLD, color.END, print_title, color.BOLD, color.END, str(subR), color.BOLD, color.END, str(submission.author)))
@@ -58,6 +59,10 @@ def grabber(subR, base_dir, posts, sort):
             # Giphy
             elif 'giphy.com/gifs' in link:
                 Giphy(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
+
+            elif 'tenor.com/view' in link:
+                Tenor(link, title, save.get_dir(str(submission.author), 
+                str(submission.subreddit)))
 
             # Flickr
             elif 'flickr.com/' in link:

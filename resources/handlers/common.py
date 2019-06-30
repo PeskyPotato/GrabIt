@@ -5,7 +5,6 @@ from urllib.request import urlopen, Request, urlretrieve
 from urllib.error import URLError, HTTPError
 from bs4 import BeautifulSoup as soup
 
-
 class Common:
     retries = 5
     wait_time = 60
@@ -24,7 +23,7 @@ class Common:
         elif 'i.reddituploads.com' in self.link:
             ext = '.jpeg'
         else:
-            ext = re.search('.jpg|.png|.gif|.jpeg', self.link).group()
+            ext = '.' + re.search('jpg$|png$|gif$|jpeg$|mp4$', self.link).group()
         self.direct = os.path.join(self.direct, self.format_name(self.name) + ext)
 
         self.save_image()
@@ -50,14 +49,9 @@ class Common:
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
             }
         )
-        '''
-        Not happy about adding another dependency because decoding byts
-        from urlopen is a nightmare. 
-        '''
         try:
-            # page_html = urlopen(req).read().decode('utf-8') 
             page_html = urlopen(req).read()
-            page_html = soup(page_html, "lxml").text
+            page_html = soup(page_html, "lxml")
         except HTTPError:
             page_html = None
         return page_html

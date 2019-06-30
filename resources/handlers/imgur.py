@@ -9,7 +9,6 @@ class Imgur(Common):
     def __init__(self, link, name, direct):
         super().__init__(link, name, direct)
         self.data = {}
-        # self.save()
 
     def save(self):
         self.sanitize_url()
@@ -27,6 +26,7 @@ class Imgur(Common):
         '''Returns the JSON file with data on images.'''
         page_html = self.get_html()
         if page_html:
+            page_html = page_html.text
             data_string = re.search('item: (.)+\n( ){12}};', page_html)
             if data_string:
                 data_string = data_string.group(0)[5:-2]
