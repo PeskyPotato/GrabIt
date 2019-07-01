@@ -1,12 +1,13 @@
 import praw
+from prawcore import exceptions
 import re
 import sys
 import os
 import time
-from creds import *
 import argparse
 import youtube_dl
 import json
+import traceback
 
 from resources.handlers.tenor import Tenor
 from resources.handlers.giphy import Giphy
@@ -22,8 +23,14 @@ class color:
 
 with open('./resources/config.json') as f:
         config = json.load(f)
+save = Save(os.getcwd(), False)
 
 def grabber(subR, base_dir, posts, sort):
+    # Initialise Reddit
+    reddit = praw.Reddit(client_id = config["reddit"]["creds"]["client_id"],
+                        client_secret= config["reddit"]["creds"]["client_secret"],
+                        user_agent= config["reddit"]["creds"]["user_agent"])
+
     if 'u/' in subR or '/u/' in subR:
         if '/u/' in subR: subR = subR[3:]
         elif 'u/'in subR: subR = subR[2:]
@@ -61,8 +68,7 @@ def grabber(subR, base_dir, posts, sort):
                 Giphy(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             elif 'tenor.com/view' in link:
-                Tenor(link, title, save.get_dir(str(submission.author), 
-                str(submission.subreddit)))
+                Tenor(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Flickr
             elif 'flickr.com/' in link:
@@ -100,37 +106,27 @@ def formatName(title):
     if len(title) > 211: title = title[:210]
     return title
 
-def main(subR, posts, base_dir, sort):
+def feeder(subR, posts, base_dir, sort):
+    # reloads config file
     with open('./resources/config.json') as f:
         config = json.load(f)
+    
     print(color.BOLD, "****", subR, "****", color.END)
     grabber(subR, base_dir, posts, sort)
 
-if __name__ == '__main__':
-    '''
-    Parser input
-    '''
-    parser = argparse.ArgumentParser(description = "Downloads images, GIFS and text from YouTube")
-    parser.add_argument("Subreddit", help = "Enter a subreddit to backup or text file")
-    parser.add_argument("-w", "--wait", help = "Change wait time between subreddits in seconds")
-    parser.add_argument("-p", "--posts", help = "Number of posts to grab on each cycle")
-    parser.add_argument("-o", "--output", help = "Set base directory to start download")
-    parser.add_argument("--by_author", help = "Sort downloads by author, default by subreddit", action = "store_true")
-    parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
-    parser.add_argument("--blacklist", help = "Avoid downloading a user, without /u/")
-
-    args = parser.parse_args()
+def main(args):
 
     subR = None
     filepath = None
-    verb = False
-    
-    # Subreddit
-    if '.txt' in args.Subreddit: filepath = args.Subreddit
-    else: subR = args.Subreddit
+
+    if args.subreddit:
+        if '.txt' in args.subreddit: 
+            filepath = args.subreddit
+        else: 
+            subR = args.subreddit
 
     # wait
-    if args.wait:
+    if args.wait and args.subreddit:
         try:
             wait = int(args.wait)
         except ValueError:
@@ -140,7 +136,7 @@ if __name__ == '__main__':
         wait = 600
 
     # posts
-    if args.posts:
+    if args.posts and args.subreddit:
         try:
             posts = int(args.posts)
         except ValueError:
@@ -150,7 +146,7 @@ if __name__ == '__main__':
         posts = 50
     
     # output
-    if args.output:
+    if args.output and args.subreddit:
         base_dir = os.path.abspath(args.output)
         if not os.path.exists(base_dir): os.makedirs(base_dir)
     else:
@@ -158,7 +154,7 @@ if __name__ == '__main__':
 
     # sort
     sort = 'hot'
-    if args.sort and (args.sort.lower() == 'hot' or args.sort.lower() == 'new' or args.sort.lower() == 'top'):
+    if args.sort and (args.sort.lower() == 'hot' or args.sort.lower() == 'new' or args.sort.lower() == 'top') and args.subreddit:
         sort = args.sort
     elif args.sort:
         print("Please enter hot, new or top for sort")
@@ -167,34 +163,62 @@ if __name__ == '__main__':
     # blacklist
     if args.blacklist:
         config["blacklist"].append(args.blacklist)
-        with open('./resources/config.json', 'w') as f:
-            json.dump(config, f)
+    
+    # reddit api credentials
+    if args.reddit_id:
+        config["reddit"]["creds"]["client_id"] = args.reddit_id
+    if args.reddit_secret:
+        config["reddit"]["creds"]["client_secret"] = args.reddit_secret
+    
+    with open('./resources/config.json', 'w') as f:
+        json.dump(config, f)
 
     # by_author
+    global save
     save = Save(base_dir, args.by_author)
-    # print(save.get_dir('author', 'sub'))
-    # sys.exit()
     createTable()
 
-    '''
-    Initialise Reddit
-    '''
-    reddit = praw.Reddit(client_id = Re_client_id,
-                        client_secret= Re_client_secret,
-                        user_agent= Re_user_agent)
-
-    '''
-    Feed subreddits to main
-    '''
-    while(True):
-        if filepath is not None:
-            with open(filepath) as f:
-                line = f.readline()
-                while line:
-                    subR = "{}".format(line.strip())
-                    main(subR, posts, base_dir, sort)
+    if args.subreddit:
+        # Passes subreddits to feeder
+        while(True):
+            if filepath is not None:
+                with open(filepath) as f:
                     line = f.readline()
+                    while line:
+                        subR = "{}".format(line.strip())
+                        feeder(subR, posts, base_dir, sort)
+                        line = f.readline()
+            else:
+                feeder(subR, posts, base_dir, sort)
+            print(color.BOLD, "Waiting", wait, "seconds.", color.END)
+            time.sleep(wait)
+
+
+if __name__ == '__main__':
+    # Parses input
+    parser = argparse.ArgumentParser(description = "Archives submissions from Reddit")
+    parser.add_argument("subreddit", nargs = '?', help = "Enter a subreddit to backup or text file")
+    parser.add_argument("-w", "--wait", help = "Change wait time between subreddits in seconds")
+    parser.add_argument("-p", "--posts", help = "Number of posts to grab on each cycle")
+    parser.add_argument("-o", "--output", help = "Set base directory to start download")
+    parser.add_argument("--by_author", help = "Sort downloads by author, default by subreddit", action = "store_true")
+    parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
+    parser.add_argument("--blacklist", help = "Avoid downloading a user, without /u/")
+    parser.add_argument('--reddit_id', help = 'Reddit client ID')
+    parser.add_argument('--reddit_secret', help = 'Reddit client secret')
+
+    args = parser.parse_args()
+    
+    try:
+        main(args)
+    except exceptions.ResponseException as err:
+        if "received 401 HTTP response" in str(err):
+            print(err, "Check Reddit API credntials")
+        elif "Redirect to /subreddits/search" in str(err):
+            print(err, "Subreddit does not exist")
         else:
-            main(subR, posts, base_dir, sort)
-        print(color.BOLD, "Waiting", wait, "seconds.", color.END)
-        time.sleep(wait)
+            print(traceback.TracebackException.from_exception(err))
+        sys.exit()
+    except KeyboardInterrupt:
+        print("\nQuitting")
+        sys.exit()
