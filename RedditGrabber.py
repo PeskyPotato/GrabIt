@@ -15,8 +15,9 @@ from resources.handlers.tenor import Tenor
 from resources.handlers.giphy import Giphy
 from resources.handlers.imgur import Imgur
 from resources.handlers.common import Common
+
 from resources.save import Save
-from handlers.dbHandler import createTable, dbWrite
+from resources.db_interface import DBInterface
 
 class color:
    RED = '\033[91m'
@@ -27,6 +28,7 @@ with open('./resources/config.json') as f:
         config = json.load(f)
 save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
+db = None
 
 def grabber(subR, base_dir, posts, sort):
     # Initialise Reddit
@@ -51,7 +53,7 @@ def grabber(subR, base_dir, posts, sort):
         #TODO find a better way to do this
         if "youtube.com/watch" not in submission.url and "liveleak.com/view" not in submission.url:
             link = re.sub("\?(.)+", "", submission.url)
-        if(dbWrite(submission.permalink, title, submission.created, submission.author, link) and not(submission.author in config["blacklist"])):
+        if not (db.checkPost(submission.permalink.split("/")[4])) and not(submission.author in config["blacklist"]):
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
             logger.info("Post: {}... From: {} By: {}".format(print_title, subR, str(submission.author)))
             title = formatName(title)
@@ -85,7 +87,7 @@ def grabber(subR, base_dir, posts, sort):
             # Reddit submission
             elif 'reddit.com/r/' in link:
                 with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
-                    logFile.write('Link to reddit' + link + ' by ' + str(submission.author) + ' \n')
+                    logFile.write('Link to reddit ' + link + ' by ' + str(submission.author) + ' \n')
                     logFile.close()
             
             # All others are caught by youtube-dl, if still no match it's written to the log file
@@ -103,6 +105,8 @@ def grabber(subR, base_dir, posts, sort):
                     logger.info("No matches: {}".format(link))
                     with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
                         logFile.write('No matches: ' + link + '\n')
+            
+            db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
 
 '''
 Removes special characters and shortens long
@@ -118,7 +122,7 @@ def feeder(subR, posts, base_dir, sort):
     with open('./resources/config.json') as f:
         config = json.load(f)
     
-    logger.info("*****  /r/{}  *****".format(subR))
+    logger.info("*****  {}  *****".format(subR))
     grabber(subR, base_dir, posts, sort)
 
 def main(args):
@@ -183,9 +187,11 @@ def main(args):
     # by_author
     global save
     save = Save(base_dir, args.by_author)
-    createTable()
+    
+    # initialise database
+    global db
+    db = DBInterface('./downloaded.db')
 
-    logger.info("")
     if args.subreddit:
         # Passes subreddits to feeder
         while(True):
