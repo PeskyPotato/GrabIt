@@ -4,12 +4,14 @@ import time
 from urllib.request import urlopen, Request, urlretrieve
 from urllib.error import URLError, HTTPError
 from bs4 import BeautifulSoup as soup
+import logging
 
 class Common:
     retries = 5
     wait_time = 60
 
     def __init__(self, link, name, direct):
+        self.logger = logging.getLogger(__name__)
         self.link = link
         self.name = name
         self.direct = direct
@@ -25,7 +27,9 @@ class Common:
         else:
             ext = '.' + re.search('jpg$|png$|gif$|jpeg$|mp4$', self.link).group()
         self.direct = os.path.join(self.direct, self.format_name(self.name) + ext)
-
+        
+        self.logger.debug("Saving {} with extension {}".format(self.link, ext))
+        
         self.save_image()
 
     def save_image(self, current_retry = 1):
@@ -33,13 +37,14 @@ class Common:
             urlretrieve(self.link, self.direct)
         except URLError:
             if self.retries > current_retry:
-                print("Retrying", self.link)
+                self.logger.warning("Retrying {}".format(self.link))
                 time.sleep(60)
                 current_retry += 1
                 self.save_image(current_retry)
             else:
+                self.logger.error("Failed {}".format(self.link))
                 with open(os.path.join(os.getcwd(), 'error.txt'), 'a+') as logFile:
-                    logFile.write('URLError: {}\n'.format(link))
+                    logFile.write('URLError: {}\n'.format(self.link))
             
     def get_html(self):
         req = Request(

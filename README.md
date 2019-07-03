@@ -6,12 +6,15 @@ RedditImageBackup is a tool built to archive self-posts, images, gifs and videos
 
 Get your [Reddit API credentials](https://www.reddit.com/prefs/apps/).
 
-Install [praw](https://praw.readthedocs.io/en/latest/), a Reddit API wrapper and [youtube_dl](https://pypi.org/project/youtube_dl/), a CLI program to download audio, videos and gifs.
+Install all the dependencies.
 
     pip install -r requirements.txt
 
-Add the API client ID and secret as so, replace the string in quotes with your credentials:
+Add the API client ID and secret through the terminal as so, replace the string in quotes with your credentials:
+
     python3 RedditGrabber.py --reddit_id "client_id_here" --reddit_secret "client_secret_here"
+
+Or you can also enter the client id and and client secret int he config.json file in the resources folder.
 
 ## Usage and Arguments
 To download from a single subreddit, in this case /r/diy
@@ -28,13 +31,14 @@ This downloads the first 50 new submission from the user /u/spez and stores they
 
 Below are all the optional arguments that you can use:
 
-    -h, --help                  show this help message and exit
+    -h, --help                     show this help message and exit
 
     -w WAIT, --wait WAIT            Change wait time between subreddits in seconds
     -p POSTS, --posts POSTS         Number of posts to grab on each cycle
     -o OUTPUT, --output OUTPUT      Set base directory to start download
     --by_author                     Sort downloads by author, default by subreddit
     --sort SORT                     Sort submissions by 'hot', 'new' or 'top'
+    -v, --verbose                   Sets verbose
     --blacklist BLACKLIST           Avoid downloading a user, without /u/
     --reddit_id REDDIT_ID           Reddit client ID
     --reddit_secret REDDIT_SECRET   Reddit client secret

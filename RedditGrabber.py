@@ -8,6 +8,8 @@ import argparse
 import youtube_dl
 import json
 import traceback
+import logging
+from resources.log_color import ColoredFormatter
 
 from resources.handlers.tenor import Tenor
 from resources.handlers.giphy import Giphy
@@ -24,6 +26,7 @@ class color:
 with open('./resources/config.json') as f:
         config = json.load(f)
 save = Save(os.getcwd(), False)
+logger = logging.getLogger(__name__)
 
 def grabber(subR, base_dir, posts, sort):
     # Initialise Reddit
@@ -44,10 +47,13 @@ def grabber(subR, base_dir, posts, sort):
 
     for submission in submissions:
         title = submission.title
-        link = re.sub("\?(.)+", "", submission.url)
+        logger.debug("Submission url {}".format(submission.url))
+        #TODO find a better way to do this
+        if "youtube.com/watch" not in submission.url and "liveleak.com/view" not in submission.url:
+            link = re.sub("\?(.)+", "", submission.url)
         if(dbWrite(submission.permalink, title, submission.created, submission.author, link) and not(submission.author in config["blacklist"])):
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
-            print('{}Post:{} {}... {}From:{} {} {}By:{} {}'.format(color.BOLD, color.END, print_title, color.BOLD, color.END, str(subR), color.BOLD, color.END, str(submission.author)))
+            logger.info("Post: {}... From: {} By: {}".format(print_title, subR, str(submission.author)))
             title = formatName(title)
             
             # Selftext post
@@ -61,7 +67,7 @@ def grabber(subR, base_dir, posts, sort):
 
             # Imgur
             elif 'imgur.com/' in link:
-                 Imgur(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
+                Imgur(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Giphy
             elif 'giphy.com/gifs' in link:
@@ -72,7 +78,7 @@ def grabber(subR, base_dir, posts, sort):
 
             # Flickr
             elif 'flickr.com/' in link:
-                print("No Flickr support")
+                logger.debug("No Flickr support")
                 with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
                         logFile.write('Needs support: ' + link + '\n')
 
@@ -94,6 +100,7 @@ def grabber(subR, base_dir, posts, sort):
                     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                         ydl.download([link])
                 except youtube_dl.utils.DownloadError:
+                    logger.info("No matches: {}".format(link))
                     with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
                         logFile.write('No matches: ' + link + '\n')
 
@@ -111,7 +118,7 @@ def feeder(subR, posts, base_dir, sort):
     with open('./resources/config.json') as f:
         config = json.load(f)
     
-    print(color.BOLD, "****", subR, "****", color.END)
+    logger.info("*****  /r/{}  *****".format(subR))
     grabber(subR, base_dir, posts, sort)
 
 def main(args):
@@ -130,7 +137,7 @@ def main(args):
         try:
             wait = int(args.wait)
         except ValueError:
-            print("Please enter an integer in seconds to wait")
+            logger.error("Please enter an integer in seconds to wait")
             sys.exit()
     else:
         wait = 600
@@ -140,7 +147,7 @@ def main(args):
         try:
             posts = int(args.posts)
         except ValueError:
-            print("Please enter an integer for the number of posts")
+            logger.error("Please enter an inter for the number of posts")
             sys.exit()
     else:
         posts = 50
@@ -157,9 +164,9 @@ def main(args):
     if args.sort and (args.sort.lower() == 'hot' or args.sort.lower() == 'new' or args.sort.lower() == 'top') and args.subreddit:
         sort = args.sort
     elif args.sort:
-        print("Please enter hot, new or top for sort")
+        logger.error("Please enter hot, new or top for sort")
         sys.exit()
-    
+
     # blacklist
     if args.blacklist:
         config["blacklist"].append(args.blacklist)
@@ -178,6 +185,7 @@ def main(args):
     save = Save(base_dir, args.by_author)
     createTable()
 
+    logger.info("")
     if args.subreddit:
         # Passes subreddits to feeder
         while(True):
@@ -190,7 +198,7 @@ def main(args):
                         line = f.readline()
             else:
                 feeder(subR, posts, base_dir, sort)
-            print(color.BOLD, "Waiting", wait, "seconds.", color.END)
+            logger.info("Waiting {} seconds".format(wait))
             time.sleep(wait)
 
 
@@ -203,22 +211,41 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--output", help = "Set base directory to start download")
     parser.add_argument("--by_author", help = "Sort downloads by author, default by subreddit", action = "store_true")
     parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
+    parser.add_argument("-v", "--verbose", help = "Set verbose", action = "store_true")
     parser.add_argument("--blacklist", help = "Avoid downloading a user, without /u/")
     parser.add_argument('--reddit_id', help = 'Reddit client ID')
     parser.add_argument('--reddit_secret', help = 'Reddit client secret')
 
     args = parser.parse_args()
+
+    # verbose / logger
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        datefmt='%m-%d %H:%M',
+                        filename='./grabber.log',
+                        filemode='w')
+    
+    console = logging.StreamHandler()
+    if args.verbose and args.subreddit:  
+        console.setLevel(logging.DEBUG)
+        formatter = ColoredFormatter("[%(name)s][%(levelname)s] %(message)s (%(filename)s:%(lineno)d)")
+    else:
+        console.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(message)s')
+
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
     
     try:
         main(args)
     except exceptions.ResponseException as err:
         if "received 401 HTTP response" in str(err):
-            print(err, "Check Reddit API credntials")
+            logger.error("{} Check Reddit API credentials".format(err))
         elif "Redirect to /subreddits/search" in str(err):
-            print(err, "Subreddit does not exist")
+            logger.error("{} Subreddit does not exist".format(err))
         else:
-            print(traceback.TracebackException.from_exception(err))
+            logger.error(traceback.TracebackException.from_exception(err))
         sys.exit()
     except KeyboardInterrupt:
-        print("\nQuitting")
+        logger.info("\nQuitting")
         sys.exit()
