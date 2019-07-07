@@ -6,6 +6,7 @@ import logging
 from .common import Common
 
 class Giphy(Common):
+    valid_url = r'https?://giphy\.com/gifs/((?P<name>[\w-]+)-)*(?P<id>(\w)+$)'
     
     def __init__(self, link, name, direct):
         self.logger = logging.getLogger(__name__)
@@ -18,4 +19,7 @@ class Giphy(Common):
         super().save()
 
     def sanitize_url(self):
-        self.link = 'https://media.giphy.com/media/' + self.link.split('-', 2)[-1] + '/giphy.gif'
+        gif_id = re.match(self.valid_url, self.link).group('id')
+        self.link = 'https://media.giphy.com/media/{}/giphy.gif'.format(gif_id)
+
+

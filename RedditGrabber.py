@@ -19,11 +19,6 @@ from resources.handlers.common import Common
 from resources.save import Save
 from resources.db_interface import DBInterface
 
-class color:
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   END = '\033[0m'
-
 with open('./resources/config.json') as f:
         config = json.load(f)
 save = Save(os.getcwd(), False)
@@ -50,12 +45,21 @@ def grabber(subR, base_dir, posts, sort):
     for submission in submissions:
         title = submission.title
         logger.debug("Submission url {}".format(submission.url))
-        #TODO find a better way to do this
-        if "youtube.com/watch" not in submission.url and "liveleak.com/view" not in submission.url:
-            link = re.sub("\?(.)+", "", submission.url)
-        if not (db.checkPost(submission.permalink.split("/")[4])) and not(submission.author in config["blacklist"]):
+
+        link = submission.url
+        ''' django URL validation regex '''
+        regex = re.compile(
+                r'^(?:http|ftp)s?://' # http:// or https://
+                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+                r'localhost|' #localhost...
+                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+                r'(?::\d+)?' # optional port
+                r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+        if not (db.checkPost(submission.permalink.split("/")[4])) and not(submission.author in config["reddit"]["blacklist"]) and re.match(regex, link):
+            downloaded = True
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
-            logger.info("Post: {}... From: {} By: {}".format(print_title, subR, str(submission.author)))
+            logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, subR, str(submission.author)))
             title = formatName(title)
             
             # Selftext post
@@ -68,14 +72,15 @@ def grabber(subR, base_dir, posts, sort):
                 Common(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Imgur
-            elif 'imgur.com/' in link:
+            elif re.match(Imgur.valid_url, link):
                 Imgur(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Giphy
-            elif 'giphy.com/gifs' in link:
+            elif re.match(Giphy.valid_url, link):
                 Giphy(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
-            elif 'tenor.com/view' in link:
+            # Tenor
+            elif re.match(Tenor.valid_url, link):
                 Tenor(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
             # Flickr
@@ -86,6 +91,7 @@ def grabber(subR, base_dir, posts, sort):
 
             # Reddit submission
             elif 'reddit.com/r/' in link:
+                downloaded = False
                 with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
                     logFile.write('Link to reddit ' + link + ' by ' + str(submission.author) + ' \n')
                     logFile.close()
@@ -105,8 +111,9 @@ def grabber(subR, base_dir, posts, sort):
                     logger.info("No matches: {}".format(link))
                     with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
                         logFile.write('No matches: ' + link + '\n')
-            
-            db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
+                    downloaded = False
+            if downloaded:
+                db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
 
 '''
 Removes special characters and shortens long
@@ -173,7 +180,7 @@ def main(args):
 
     # blacklist
     if args.blacklist:
-        config["blacklist"].append(args.blacklist)
+        config["reddit"]["blacklist"].append(args.blacklist)
     
     # reddit api credentials
     if args.reddit_id:
@@ -190,7 +197,7 @@ def main(args):
     
     # initialise database
     global db
-    db = DBInterface('./downloaded.db')
+    db = DBInterface(config["general"]["database_location"])
 
     if args.subreddit:
         # Passes subreddits to feeder
@@ -225,11 +232,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # verbose / logger
+    if config["general"]["logger_append"]:
+        filemode = 'a'
+    else:
+        filemode = 'w'
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M',
-                        filename='./grabber.log',
-                        filemode='w')
+                        filename=config["general"]["log_file"],
+                        filemode=filemode)
     
     console = logging.StreamHandler()
     if args.verbose and args.subreddit:  
