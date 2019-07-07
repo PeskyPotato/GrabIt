@@ -1,23 +1,38 @@
 import re 
 import os
 import time
+import json
 from urllib.request import urlopen, Request, urlretrieve
 from urllib.error import URLError, HTTPError
 from bs4 import BeautifulSoup as soup
 import logging
 
 class Common:
-    retries = 5
-    wait_time = 60
 
     def __init__(self, link, name, direct):
         self.logger = logging.getLogger(__name__)
         self.link = link
         self.name = name
         self.direct = direct
+        self.load_config()
         
         self.save()
     
+    def load_config(self):
+        with open('resources/config.json') as json_data_file:
+            data = json.load(json_data_file)
+        try:
+            int(data["media_download"]["retries"])
+            int(data["media_download"]["wait_time"])
+            
+            self.retries = data["media_download"]["retries"]
+            self.wait_time = data["media_download"]["wait_time"]
+
+        except:
+            self.logger.error("TypeError: Media download retries or wait time is not an integer.")
+            self.retries = 5
+            self.wait_time = 60
+
     def save(self):
         if 'gifv' in self.link:
             ext = '.mp4'

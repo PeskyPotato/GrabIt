@@ -51,9 +51,10 @@ def grabber(subR, base_dir, posts, sort):
         title = submission.title
         logger.debug("Submission url {}".format(submission.url))
         #TODO find a better way to do this
-        if "youtube.com/watch" not in submission.url and "liveleak.com/view" not in submission.url:
-            link = re.sub("\?(.)+", "", submission.url)
-        if not (db.checkPost(submission.permalink.split("/")[4])) and not(submission.author in config["blacklist"]):
+        link = submission.url
+        # if "youtube.com/watch" not in submission.url and "liveleak.com/view" not in submission.url:
+        #     link = re.sub("\?(.)+", "", submission.url)
+        if not (db.checkPost(submission.permalink.split("/")[4])) and not(submission.author in config["reddit"]["blacklist"]):
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
             logger.info("Post: {}... From: {} By: {}".format(print_title, subR, str(submission.author)))
             title = formatName(title)
@@ -75,6 +76,7 @@ def grabber(subR, base_dir, posts, sort):
             elif 'giphy.com/gifs' in link:
                 Giphy(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
+            # Tenor
             elif 'tenor.com/view' in link:
                 Tenor(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
 
@@ -173,7 +175,7 @@ def main(args):
 
     # blacklist
     if args.blacklist:
-        config["blacklist"].append(args.blacklist)
+        config["reddit"]["blacklist"].append(args.blacklist)
     
     # reddit api credentials
     if args.reddit_id:
@@ -190,7 +192,7 @@ def main(args):
     
     # initialise database
     global db
-    db = DBInterface('./downloaded.db')
+    db = DBInterface(config["general"]["database_location"])
 
     if args.subreddit:
         # Passes subreddits to feeder
@@ -225,11 +227,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # verbose / logger
+    if config["general"]["logger_append"]:
+        filemode = 'a'
+    else:
+        filemode = 'w'
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M',
-                        filename='./grabber.log',
-                        filemode='w')
+                        filename=config["general"]["log_file"],
+                        filemode=filemode)
     
     console = logging.StreamHandler()
     if args.verbose and args.subreddit:  
