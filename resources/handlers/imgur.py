@@ -6,6 +6,7 @@ import logging
 from .common import Common
 
 class Imgur(Common):
+    valid_url = r'https?://(?:i\.|m\.)?imgur\.com/((?:a|(gallery))/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>.+)*'
     
     def __init__(self, link, name, direct):
         super().__init__(link, name, direct)
@@ -23,6 +24,9 @@ class Imgur(Common):
 
     def sanitize_url(self):
         self.link = self.link.replace("m.imgur", "imgur")
+        ext = re.match(self.valid_url, self.link).group('ext')
+        if ext:
+            self.link = self.link.replace(ext, "")
 
     def get_data(self):
         '''Returns the JSON file with data on images.'''
@@ -44,11 +48,15 @@ class Imgur(Common):
     def save_single(self):
         self.link = "https://imgur.com/{}{}".format(self.data["hash"], self.data["ext"])
         direct_description = self.direct
-        self.direct = os.path.join(self.direct, "{}-{}{}".format(self.format_name(self.data["title"]), self.data["hash"], self.data["ext"]))
+        title = self.name
+        if self.data.get("title"):
+            title = self.data.get("title")
+        title = self.format_name(title)
+        self.direct = os.path.join(self.direct, "{}-{}{}".format(title, self.data["hash"], self.data["ext"]))
         self.logger.debug("Saving single image {}".format(self.link))
 
         self.save_image()
-        self.write_description(os.path.join(direct_description,"{}-{}.txt".format(self.format_name(self.data["title"]), self.data["hash"])), self.data["description"])
+        self.write_description(os.path.join(direct_description,"{}-{}.txt".format(title, self.data["hash"])), self.data["description"])
     
     def save_album(self):
         album_id = self.link.rsplit('/', 1)[-1]
@@ -56,7 +64,6 @@ class Imgur(Common):
             album_id = album_id.rsplit('#', 1)[-2]
         
         self.logger.debug("Saving album {} - album_id {}".format(self.link, album_id))
-
         if self.data["title"]:
             folder_name = self.format_name(self.data["title"])
         else:
@@ -76,6 +83,10 @@ class Imgur(Common):
         for image in images:
             # logging.debug("Saving image from album {}".format(image["hash"]))
             self.link = "https://imgur.com/{}{}".format(image["hash"], image["ext"])
+            # title = self.name
+            # if image.get("title"):
+            #     title = image.get("title")
+            # title = self.format_name(title)
             self.direct = os.path.join(folder, "{}-{}{}".format(counter, image["hash"], image["ext"]))
 
             self.save_image()

@@ -6,6 +6,7 @@ import logging
 from .common import Common
 
 class Tenor(Common):
+    valid_url = r'https?://tenor\.com/view/(?P<name>[\w-]+)-(?P<id>(\w)+$)'
     
     def __init__(self, link, name, direct):
         self.logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ class Tenor(Common):
             return None
 
     def sanitize_url(self):
-        self.link = self.link.replace("http:", "https")
+        self.link = self.link.replace("http:", "https:")
     
     def get_data(self):
         page_html = self.get_html()

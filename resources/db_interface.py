@@ -140,15 +140,23 @@ class DBInterface():
             ret = ret[0]
         return ret
     
+    def lastRow(self):
+        self.c.execute("""SELECT submission_id, title, author_id, subreddit_id from submissions 
+            ORDER BY rowid DESC limit 5""")
+        return self.c.fetchall()
+    
+    def getAuthor(self, author_id):
+        self.c.execute("""SELECT name FROM authors WHERE author_id=?""", (author_id,))
+        ret = self.c.fetchone()
+        if ret:
+            ret = ret[0]
+        return ret
+    
+    def getSubreddit(self, author_id):
+        self.c.execute("""SELECT name FROM subreddits WHERE subreddit_id=?""", (author_id,))
+        ret = self.c.fetchone()
+        if ret:
+            ret = ret[0]
+        return ret
 
-# db = DBInterface('./downloaded.db')
-
-# db.insertSubreddit("test")
-# print(db.checkPost("94u3230"))
-# print(db.checkSubreddit('CrimeScene'))
-# db.insertPost("/r/CrimeScene/comments/jlk2s/seomthing_twekj/", "Another Crime", "34562", "author2", "https://google.com")
-# db.insertPost("/r/anime/comments/5afb8v/rewatch_spoilers_black_lagoon_robertas_blood/", "roberta", "239483209", "author3", "https://localhost:8080")
-
-# db.migrate("./downloaded.db")
-
-# db.close()
+    
