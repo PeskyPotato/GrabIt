@@ -60,27 +60,29 @@ def grabber(subR, base_dir, posts, sort):
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
             logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, subR, str(submission.author)))
             title = formatName(title)
-            
+
+            path = {'author': str(submission.author), 'subreddit': str(submission.subreddit)}
+
             # Selftext post
             if submission.is_self:
-                with open(os.path.join(save.get_dir(str(submission.author), str(submission.subreddit)), title + '.txt'), 'a+') as f:
+                with open(os.path.join(save.get_dir(path),'{}-{}.txt'.format(str(submission.id), formatName(title))), 'a+') as f:
                     f.write(str(submission.selftext.encode('utf-8')))
 
             # Link to a jpg, png, gifv, gif, jpeg
             elif any(ext in link for ext in ['.jpg', '.png', '.gif', 'gifv', 'jpeg']) or 'i.reddituploads.com' in link:
-                Common(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
+                Common(link, '{}-{}'.format(str(submission.id),title), save.get_dir(path))
 
             # Imgur
             elif re.match(Imgur.valid_url, link):
-                Imgur(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
+                Imgur(link, title, save.get_dir(path))
 
             # Giphy
             elif re.match(Giphy.valid_url, link):
-                Giphy(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
+                Giphy(link, title, save.get_dir(path))
 
             # Tenor
             elif re.match(Tenor.valid_url, link):
-                Tenor(link, title, save.get_dir(str(submission.author), str(submission.subreddit)))
+                Tenor(link, title, save.get_dir(path))
 
             # Flickr
             elif 'flickr.com/' in link:
@@ -97,10 +99,10 @@ def grabber(subR, base_dir, posts, sort):
             
             # All others are caught by youtube-dl, if still no match it's written to the log file
             else:
-                folder = save.get_dir(str(submission.author), str(submission.subreddit))
+                folder = save.get_dir(path)
                 ydl_opts = {
                     'format': 'best',
-                    'outtmpl': os.path.join(folder, '%(title)s-%(id)s.%(ext)s'),
+                    'outtmpl': os.path.join(folder, '%(id)s-%(title)s.%(ext)s'),
                     'quiet': 'quiet'
                 }
                 try:
@@ -192,7 +194,11 @@ def main(args):
 
     # by_author
     global save
-    save = Save(base_dir, args.by_author)
+    if args.output_template:
+        template = args.output_template
+    else:
+        template = os.path.join('%(subreddit)s','%(author)s')
+    save = Save(base_dir, template)
     
     # initialise database
     global db
@@ -221,7 +227,7 @@ if __name__ == '__main__':
     parser.add_argument("-w", "--wait", help = "Change wait time between subreddits in seconds")
     parser.add_argument("-p", "--posts", help = "Number of posts to grab on each cycle")
     parser.add_argument("-o", "--output", help = "Set base directory to start download")
-    parser.add_argument("--by_author", help = "Sort downloads by author, default by subreddit", action = "store_true")
+    parser.add_argument('-t', '--output_template', help = 'Specify output template for download')
     parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
     parser.add_argument("-v", "--verbose", help = "Set verbose", action = "store_true")
     parser.add_argument("--blacklist", help = "Avoid downloading a user, without /u/")
