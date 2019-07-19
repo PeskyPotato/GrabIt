@@ -6,7 +6,7 @@ import logging
 from .common import Common
 
 class Imgur(Common):
-    valid_url = r'https?://(?:i\.|m\.)?imgur\.com/((?:a|(gallery))/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>.+)*'
+    valid_url = r'https?://(?:i\.|m\.)?imgur\.com/((?:a|(gallery))/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>[^/])*'
     
     def __init__(self, link, name, direct):
         super().__init__(link, name, direct)
@@ -17,7 +17,7 @@ class Imgur(Common):
         self.logger.debug("Saving {}".format(self.link))
         self.data = self.get_data()
         if self.data:
-            if '/gallery/' in self.link or '/a/' in self.link:
+            if self.data.get('is_album'):
                 self.save_album()
             else:
                 self.save_single()
@@ -71,8 +71,6 @@ class Imgur(Common):
         try:
             images = self.data["album_images"]["images"]
         except KeyError:
-            # sometimes has gallery or a in link but not album
-            # TODO check JSON and decide in save() to avoid KeyError
             self.save_single()
             return
         folder = os.path.join(self.direct, folder_name)
@@ -81,12 +79,7 @@ class Imgur(Common):
         
         counter = 1
         for image in images:
-            # logging.debug("Saving image from album {}".format(image["hash"]))
             self.link = "https://imgur.com/{}{}".format(image["hash"], image["ext"])
-            # title = self.name
-            # if image.get("title"):
-            #     title = image.get("title")
-            # title = self.format_name(title)
             self.direct = os.path.join(folder, "{}-{}{}".format(counter, image["hash"], image["ext"]))
 
             self.save_image()

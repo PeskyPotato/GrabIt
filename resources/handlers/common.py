@@ -73,6 +73,8 @@ class Common:
             page_html = soup(page_html, "lxml")
         except HTTPError:
             page_html = None
+        except URLError as e:
+            self.logger.error("URLError {}".format(str(e)))
         return page_html
 
     def format_name(self, title):
