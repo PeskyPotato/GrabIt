@@ -4,6 +4,7 @@ import time
 import json
 from urllib.request import urlopen, Request, urlretrieve
 from urllib.error import URLError, HTTPError
+from http.client import RemoteDisconnected
 from bs4 import BeautifulSoup as soup
 import logging
 
@@ -49,16 +50,14 @@ class Common:
     def save_image(self, current_retry=1):
         try:
             urlretrieve(self.link, self.direct)
-        except URLError:
+        except (URLError, RemoteDisconnected, ConnectionResetError) as e:
             if self.retries > current_retry:
-                self.logger.warning("Retrying {}".format(self.link))
+                self.logger.warning("{}, retrying {}".format(str(e), self.link))
                 time.sleep(self.wait_time)
                 current_retry += 1
                 self.save_image(current_retry)
             else:
-                self.logger.error("Failed {}".format(self.link))
-                with open(os.path.join(os.getcwd(), 'error.txt'), 'a+') as logFile:
-                    logFile.write('URLError: {}\n'.format(self.link))
+                self.logger.error("{}, failed {}".format(str(e), self.link))
 
     def get_html(self):
         req = Request(
@@ -71,10 +70,9 @@ class Common:
         try:
             page_html = urlopen(req).read()
             page_html = soup(page_html, "lxml")
-        except HTTPError:
+        except (HTTPError, URLError) as e:
             page_html = None
-        except URLError as e:
-            self.logger.error("URLError {}".format(str(e)))
+            self.logger.error('{} - Link {}'.format(str(e), self.link))
         return page_html
 
     def format_name(self, title):

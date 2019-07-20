@@ -24,9 +24,11 @@ class Imgur(Common):
 
     def sanitize_url(self):
         self.link = self.link.replace("m.imgur", "imgur")
+        self.link = re.sub('#(.*)', '', self.link)
         ext = re.match(self.valid_url, self.link).group('ext')
         if ext:
             self.link = self.link.replace(ext, "")
+        self.logger.debug('Sanitized link {}'.format(self.link))
 
     def get_data(self):
         '''Returns the JSON file with data on images.'''

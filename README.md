@@ -14,7 +14,7 @@ Add the API client ID and secret through the terminal as so, replace the string 
 
     python3 RedditGrabber.py --reddit_id "client_id_here" --reddit_secret "client_secret_here"
 
-Or you can also enter the client id and and client secret int he config.json file in the resources folder.
+Or you can also enter the client id and and client secret in the config.json file in the resources folder.
 
 ## Usage and Arguments
 To download from a single subreddit, in this case /r/diy
@@ -24,10 +24,6 @@ To download from a single subreddit, in this case /r/diy
 You can also pass in a list of subreddits and users in the form of a txt file, with contains each subreddit on a newline.
 
     python3 RedditGrabber.py subs.txt
-
-This downloads the first 50 new submission from the user /u/spez and stores they by user then subreddit(i.e. spez/\<subreddit>/\<media>).
-
-    python3 RedditGrabber.py /u/spez --by_author --posts 50 --sort new
 
 Below are all the optional arguments that you can use:
 
