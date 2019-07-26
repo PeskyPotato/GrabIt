@@ -58,7 +58,7 @@ def grabber(subR, base_dir, posts, sort):
         if not (db.checkPost(submission.permalink.split("/")[4])) and not(submission.author in config["reddit"]["blacklist"]) and re.match(regex, link):
             downloaded = True
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
-            logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, subR, str(submission.author)))
+            logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, submission.subreddit, str(submission.author)))
             title = formatName(title)
 
             path = {'author': str(submission.author), 'subreddit': str(submission.subreddit)}

@@ -35,11 +35,12 @@ class Imgur(Common):
         page_html = self.get_html()
         if page_html:
             page_html = page_html.text
-            data_string = re.search('item: (.)+\n( ){12}};', page_html)
+            data_string = re.search('image( ){15}: (?P<data>(.)+)', page_html)
             if data_string:
-                data_string = data_string.group(0)[5:-2]
-                data = json.loads(data_string)
+                data = data_string.group('data')[:-1]
+                data = json.loads(data)
                 return data
+        self.logger.warning("Imgur album page returning None")
         return None
     
     def write_description(self, txt_file, description):
