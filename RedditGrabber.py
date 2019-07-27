@@ -137,7 +137,7 @@ def feeder(subR, posts, base_dir, sort):
         elif "Redirect to /subreddits/search" in str(err):
             logger.error("{} Subreddit does not exist".format(err))
         else:
-            logger.error(str(traceback.TracebackException.from_exception(err)) + " Check username of subreddit: " + subR)
+            logger.error(str(traceback.TracebackException.from_exception(err)) + " Check username or subreddit: " + subR)
 
 def main(args):
 
