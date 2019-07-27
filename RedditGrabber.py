@@ -30,7 +30,6 @@ def grabber(subR, base_dir, posts, sort):
     reddit = praw.Reddit(client_id = config["reddit"]["creds"]["client_id"],
                         client_secret= config["reddit"]["creds"]["client_secret"],
                         user_agent= config["reddit"]["creds"]["user_agent"])
-
     if 'u/' in subR or '/u/' in subR:
         if '/u/' in subR: subR = subR[3:]
         elif 'u/'in subR: subR = subR[2:]
@@ -41,7 +40,7 @@ def grabber(subR, base_dir, posts, sort):
         if sort == 'hot': submissions = reddit.subreddit(subR).hot(limit = int(posts))
         elif sort == 'new': submissions = reddit.subreddit(subR).new(limit = int(posts))
         elif sort == 'top': submissions = reddit.subreddit(subR).top(limit = int(posts))
-
+    
     for submission in submissions:
         title = submission.title
         logger.debug("Submission url {}".format(submission.url))
@@ -110,9 +109,8 @@ def grabber(subR, base_dir, posts, sort):
                         ydl.download([link])
                 except youtube_dl.utils.DownloadError:
                     logger.info("No matches: {}".format(link))
-                    with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
-                        logFile.write('No matches: ' + link + '\n')
                     downloaded = False
+
             if downloaded:
                 db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
 
@@ -131,7 +129,15 @@ def feeder(subR, posts, base_dir, sort):
         config = json.load(f)
     
     logger.info("*****  {}  *****".format(subR))
-    grabber(subR, base_dir, posts, sort)
+    try:
+        grabber(subR, base_dir, posts, sort)
+    except exceptions.ResponseException as err:
+        if "received 401 HTTP response" in str(err):
+            logger.error("{} Check Reddit API credentials".format(err))
+        elif "Redirect to /subreddits/search" in str(err):
+            logger.error("{} Subreddit does not exist".format(err))
+        else:
+            logger.error(str(traceback.TracebackException.from_exception(err)) + " Check username of subreddit: " + subR)
 
 def main(args):
 
@@ -260,14 +266,6 @@ if __name__ == '__main__':
     
     try:
         main(args)
-    except exceptions.ResponseException as err:
-        if "received 401 HTTP response" in str(err):
-            logger.error("{} Check Reddit API credentials".format(err))
-        elif "Redirect to /subreddits/search" in str(err):
-            logger.error("{} Subreddit does not exist".format(err))
-        else:
-            logger.error(traceback.TracebackException.from_exception(err))
-        sys.exit()
     except KeyboardInterrupt:
         logger.info("\nQuitting")
         sys.exit()
