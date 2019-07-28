@@ -54,7 +54,7 @@ def grabber(subR, base_dir, posts, sort):
                 r'(?::\d+)?' # optional port
                 r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
-        if not (db.checkPost(submission.permalink.split("/")[4])) and not(submission.author in config["reddit"]["blacklist"]) and re.match(regex, link):
+        if not (db.checkPost(submission.permalink.split("/")[4])) and checkBlacklist(submission) and re.match(regex, link):
             downloaded = True
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
             logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, submission.subreddit, str(submission.author)))
@@ -68,7 +68,6 @@ def grabber(subR, base_dir, posts, sort):
                     f.write(str(submission.selftext.encode('utf-8')))
 
             # Link to a jpg, png, gifv, gif, jpeg
-            # elif any(ext in link for ext in ['.jpg', '.png', '.gif', 'gifv', 'jpeg']) or 'i.reddituploads.com' in link:
             elif re.match(Common.valid_url, link):
                 Common(link, '{}-{}'.format(str(submission.id),title), save.get_dir(path))
 
@@ -114,6 +113,17 @@ def grabber(subR, base_dir, posts, sort):
 
             if downloaded:
                 db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
+
+def checkBlacklist(submission):
+    for item in config['reddit']['blacklist']:
+        if ('u/' in item or '/u/' in item):
+            if item.split('/')[-1] == submission.author:
+                logger.debug('Blocked user ' + item.split('/')[-1])
+                return False
+        elif item == submission.subreddit:
+            logger.debug('Blocked subreddit ' + item)
+            return False
+    return True
 
 '''
 Removes special characters and shortens long
@@ -170,7 +180,7 @@ def main(args):
             sys.exit()
     else:
         posts = 50
-    
+
     # output
     if args.output and args.subreddit:
         base_dir = os.path.abspath(args.output)
@@ -189,7 +199,7 @@ def main(args):
     # blacklist
     if args.blacklist:
         config["reddit"]["blacklist"].append(args.blacklist)
-    
+
     # reddit api credentials
     if args.reddit_id:
         config["reddit"]["creds"]["client_id"] = args.reddit_id
@@ -206,7 +216,7 @@ def main(args):
     else:
         template = os.path.join('%(subreddit)s','%(author)s')
     save = Save(base_dir, template)
-    
+
     # initialise database
     global db
     db = DBInterface(config["general"]["database_location"])
@@ -237,7 +247,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--output_template', help = 'Specify output template for download')
     parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
     parser.add_argument("-v", "--verbose", help = "Set verbose", action = "store_true")
-    parser.add_argument("--blacklist", help = "Avoid downloading a user, without /u/")
+    parser.add_argument("--blacklist", help = "Avoid downloading a user or subreddit")
     parser.add_argument('--reddit_id', help = 'Reddit client ID')
     parser.add_argument('--reddit_secret', help = 'Reddit client secret')
 
@@ -253,7 +263,7 @@ if __name__ == '__main__':
                         datefmt='%m-%d %H:%M',
                         filename=config["general"]["log_file"],
                         filemode=filemode)
-    
+
     console = logging.StreamHandler()
     if args.verbose and args.subreddit:  
         console.setLevel(logging.DEBUG)
@@ -264,7 +274,7 @@ if __name__ == '__main__':
 
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
-    
+
     try:
         main(args)
     except KeyboardInterrupt:

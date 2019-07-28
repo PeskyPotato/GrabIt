@@ -82,5 +82,3 @@ class Common:
         if len(title) > 190:
             title = title[:120]
         return title
-
-Common('https://i.imgur.com/Zha8Q6k.jpg?1', 'test', '/home/bender/Desktop/')
