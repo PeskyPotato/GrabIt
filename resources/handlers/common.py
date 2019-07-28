@@ -10,6 +10,8 @@ import logging
 
 
 class Common:
+    valid_url = r'((.)+.(?P<ext>jpg|png|gif|jpeg|mp4))|(https?://i.reddituploads.com/(.)+)'
+
     def __init__(self, link, name, direct):
         self.logger = logging.getLogger(__name__)
         self.link = link
@@ -40,7 +42,7 @@ class Common:
         elif 'i.reddituploads.com' in self.link:
             ext = '.jpeg'
         else:
-            ext = '.' + re.search('jpg$|png$|gif$|jpeg$|mp4$', self.link).group()
+            ext = '.' + re.search(self.valid_url, self.link).group('ext')
         self.direct = os.path.join(self.direct, self.format_name(self.name) + ext)
 
         self.logger.debug("Saving {} with extension {}".format(self.link, ext))
@@ -80,3 +82,5 @@ class Common:
         if len(title) > 190:
             title = title[:120]
         return title
+
+Common('https://i.imgur.com/Zha8Q6k.jpg?1', 'test', '/home/bender/Desktop/')

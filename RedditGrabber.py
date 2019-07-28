@@ -68,7 +68,8 @@ def grabber(subR, base_dir, posts, sort):
                     f.write(str(submission.selftext.encode('utf-8')))
 
             # Link to a jpg, png, gifv, gif, jpeg
-            elif any(ext in link for ext in ['.jpg', '.png', '.gif', 'gifv', 'jpeg']) or 'i.reddituploads.com' in link:
+            # elif any(ext in link for ext in ['.jpg', '.png', '.gif', 'gifv', 'jpeg']) or 'i.reddituploads.com' in link:
+            elif re.match(Common.valid_url, link):
                 Common(link, '{}-{}'.format(str(submission.id),title), save.get_dir(path))
 
             # Imgur
