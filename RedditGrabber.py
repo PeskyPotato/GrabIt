@@ -110,6 +110,9 @@ def grabber(subR, base_dir, posts, sort):
                 except youtube_dl.utils.DownloadError:
                     logger.info("No matches: {}".format(link))
                     downloaded = False
+                except Exception as e:
+                    logger.error('Exception {} on {}'.format(e, link))
+                    downloaded = False
 
             if downloaded:
                 db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
@@ -209,7 +212,7 @@ def main(args):
     with open('./resources/config.json', 'w') as f:
         json.dump(config, f)
 
-    # by_author
+    # output template
     global save
     if args.output_template:
         template = args.output_template
@@ -219,6 +222,10 @@ def main(args):
 
     # initialise database
     global db
+    db_path = config['general']['database_location']
+    db_path = db_path[:db_path.rfind('/')]
+    if not os.path.exists(db_path):
+        os.makedirs(db_path)
     db = DBInterface(config["general"]["database_location"])
 
     if args.subreddit:
@@ -254,15 +261,23 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # verbose / logger
+    log_path = config['general']['log_file']
+    log_path = log_path[:log_path.rfind('/')]
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
     if config["general"]["logger_append"]:
         filemode = 'a'
     else:
         filemode = 'w'
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        datefmt='%m-%d %H:%M',
-                        filename=config["general"]["log_file"],
-                        filemode=filemode)
+    try:
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                            datefmt='%m-%d %H:%M',
+                            filename=config["general"]["log_file"],
+                            filemode=filemode)
+    except IsADirectoryError as e:
+        print('Log file not set correctly, check log_file in config')
+        sys.exit()
 
     console = logging.StreamHandler()
     if args.verbose and args.subreddit:  
