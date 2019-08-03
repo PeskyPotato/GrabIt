@@ -38,6 +38,7 @@ Below are all the optional arguments that you can use:
     --sort SORT                     Sort submissions by 'hot', 'new' or 'top'
     -v, --verbose                   Sets verbose
     --blacklist BLACKLIST           Avoid downloading a user or subreddit
+    --search SEARCH                 Search for submissions in a subreddit
     --reddit_id REDDIT_ID           Reddit client ID
     --reddit_secret REDDIT_SECRET   Reddit client secret
 

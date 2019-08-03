@@ -25,22 +25,31 @@ save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
 db = None
 
-def grabber(subR, base_dir, posts, sort):
+def grabber(subR, base_dir, posts, sort, search):
     # Initialise Reddit
     reddit = praw.Reddit(client_id = config["reddit"]["creds"]["client_id"],
                         client_secret= config["reddit"]["creds"]["client_secret"],
                         user_agent= config["reddit"]["creds"]["user_agent"])
-    if 'u/' in subR or '/u/' in subR:
-        if '/u/' in subR: subR = subR[3:]
-        elif 'u/'in subR: subR = subR[2:]
-        if sort == 'hot': submissions = reddit.redditor(subR).submissions.hot(limit = int(posts))
-        elif sort == 'new': submissions = reddit.redditor(subR).submissions.new(limit = int(posts))
-        elif sort =='top': submissions = reddit.redditor(subR).submissions.top(limit = int(posts))
+    submissions = []
+    if search:
+        logger.debug('Search term: {}'.format(search) )
+        if 'u/' in subR or '/u/' in subR:
+            logger.warning('Cannot search redditors: {}'.format(subR))
+        else:
+            submissions = reddit.subreddit(subR).search(search, sort=sort.lower(), limit = int(posts))
+
     else:
-        if sort == 'hot': submissions = reddit.subreddit(subR).hot(limit = int(posts))
-        elif sort == 'new': submissions = reddit.subreddit(subR).new(limit = int(posts))
-        elif sort == 'top': submissions = reddit.subreddit(subR).top(limit = int(posts))
-    
+        if 'u/' in subR or '/u/' in subR:
+            if '/u/' in subR: subR = subR[3:]
+            elif 'u/'in subR: subR = subR[2:]
+            if sort == 'hot': submissions = reddit.redditor(subR).submissions.hot(limit = int(posts))
+            elif sort == 'new': submissions = reddit.redditor(subR).submissions.new(limit = int(posts))
+            elif sort =='top': submissions = reddit.redditor(subR).submissions.top(limit = int(posts))
+        else:
+            if sort == 'hot': submissions = reddit.subreddit(subR).hot(limit = int(posts))
+            elif sort == 'new': submissions = reddit.subreddit(subR).new(limit = int(posts))
+            elif sort == 'top': submissions = reddit.subreddit(subR).top(limit = int(posts))
+        
     for submission in submissions:
         title = submission.title
         logger.debug("Submission url {}".format(submission.url))
@@ -137,14 +146,14 @@ def formatName(title):
     if len(title) > 211: title = title[:210]
     return title
 
-def feeder(subR, posts, base_dir, sort):
+def feeder(subR, posts, base_dir, sort, search):
     # reloads config file
     with open('./resources/config.json') as f:
         config = json.load(f)
     
     logger.info("*****  {}  *****".format(subR))
     try:
-        grabber(subR, base_dir, posts, sort)
+        grabber(subR, base_dir, posts, sort, search)
     except exceptions.ResponseException as err:
         if "received 401 HTTP response" in str(err):
             logger.error("{} Check Reddit API credentials".format(err))
@@ -198,6 +207,10 @@ def main(args):
     elif args.sort:
         logger.error("Please enter hot, new or top for sort")
         sys.exit()
+    
+    search = None
+    if args.search:
+        search = args.search
 
     # blacklist
     if args.blacklist:
@@ -236,10 +249,10 @@ def main(args):
                     line = f.readline()
                     while line:
                         subR = "{}".format(line.strip())
-                        feeder(subR, posts, base_dir, sort)
+                        feeder(subR, posts, base_dir, sort, search)
                         line = f.readline()
             else:
-                feeder(subR, posts, base_dir, sort)
+                feeder(subR, posts, base_dir, sort, search)
             logger.info("Waiting {} seconds".format(wait))
             time.sleep(wait)
 
@@ -255,6 +268,7 @@ if __name__ == '__main__':
     parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
     parser.add_argument("-v", "--verbose", help = "Set verbose", action = "store_true")
     parser.add_argument("--blacklist", help = "Avoid downloading a user or subreddit")
+    parser.add_argument('--search', help='Search for submissions in a subreddit')
     parser.add_argument('--reddit_id', help = 'Reddit client ID')
     parser.add_argument('--reddit_secret', help = 'Reddit client secret')
 
