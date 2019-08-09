@@ -2,6 +2,7 @@ import re
 import os
 import time
 import json
+import urllib.request
 from urllib.request import urlopen, Request, urlretrieve
 from urllib.error import URLError, HTTPError
 from http.client import RemoteDisconnected
@@ -14,6 +15,9 @@ class Common:
 
     def __init__(self, link, name, direct):
         self.logger = logging.getLogger(__name__)
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36')]
+        urllib.request.install_opener(opener)
         self.link = link
         self.name = name
         self.direct = direct
@@ -36,7 +40,7 @@ class Common:
             self.wait_time = 60
 
     def save(self):
-        if 'gifv' in self.link:
+        if '.gifv' in self.link:
             ext = '.mp4'
             self.link = self.link.replace('gifv', 'mp4')
         elif 'i.reddituploads.com' in self.link:
