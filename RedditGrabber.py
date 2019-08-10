@@ -9,6 +9,7 @@ import youtube_dl
 import json
 import traceback
 import logging
+from datetime import datetime
 from resources.log_color import ColoredFormatter
 
 from resources.handlers.tenor import Tenor
@@ -283,11 +284,18 @@ if __name__ == '__main__':
         filemode = 'a'
     else:
         filemode = 'w'
+    if config['general']['log_timestamp']:
+        now = datetime.now()
+        log_path = config['general']['log_file']
+        log_file = log_path[log_path.rfind('/')+1:]
+        log_file = '%d-%d-%d_%d-%d-%d_%s' % (now.year, now.month, now.day, now.hour, now.minute, now.second, log_file)
+    else:
+        log_file = config['general']['log_file']
     try:
         logging.basicConfig(level=logging.DEBUG,
                             format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                             datefmt='%m-%d %H:%M',
-                            filename=config["general"]["log_file"],
+                            filename=log_file,
                             filemode=filemode)
     except IsADirectoryError as e:
         print('Log file not set correctly, check log_file in config')
@@ -304,6 +312,7 @@ if __name__ == '__main__':
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
 
+    # start program
     try:
         main(args)
     except KeyboardInterrupt:
