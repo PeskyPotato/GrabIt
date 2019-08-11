@@ -21,23 +21,24 @@ from resources.save import Save
 from resources.db_interface import DBInterface
 
 with open('./resources/config.json') as f:
-        config = json.load(f)
+    config = json.load(f)
 save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
 db = None
 
+
 def grabber(subR, base_dir, posts, sort, search):
     # Initialise Reddit
-    reddit = praw.Reddit(client_id = config["reddit"]["creds"]["client_id"],
-                        client_secret= config["reddit"]["creds"]["client_secret"],
-                        user_agent= config["reddit"]["creds"]["user_agent"])
+    reddit = praw.Reddit(client_id=config["reddit"]["creds"]["client_id"],
+                         client_secret=config["reddit"]["creds"]["client_secret"],
+                         user_agent=config["reddit"]["creds"]["user_agent"])
     submissions = []
     if search:
-        logger.debug('Search term: {}'.format(search) )
+        logger.debug('Search term: {}'.format(search))
         if 'u/' in subR or '/u/' in subR:
             logger.warning('Cannot search redditors: {}'.format(subR))
         else:
-            submissions = reddit.subreddit(subR).search(search, sort=sort.lower(), limit = int(posts))
+            submissions=reddit.subreddit(subR).search(search, sort=sort.lower(), limit=int(posts))
 
     else:
         if 'u/' in subR or '/u/' in subR:
@@ -50,8 +51,16 @@ def grabber(subR, base_dir, posts, sort, search):
             if sort == 'hot': submissions = reddit.subreddit(subR).hot(limit = int(posts))
             elif sort == 'new': submissions = reddit.subreddit(subR).new(limit = int(posts))
             elif sort == 'top': submissions = reddit.subreddit(subR).top(limit = int(posts))
-        
+    
+    submission_list = []
     for submission in submissions:
+        submission_list.append(submission)
+        print('Loading', len(submission_list),'posts', end='\r')
+    
+    counter = 0
+    for submission in submission_list:
+        counter += 1
+        bar_percent(counter, len(submission_list), 50)
         title = submission.title
         logger.debug("Submission url {}".format(submission.url))
         link = submission.url
@@ -95,16 +104,14 @@ def grabber(subR, base_dir, posts, sort, search):
 
             # Flickr
             elif 'flickr.com/' in link:
-                logger.debug("No Flickr support")
-                with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
-                        logFile.write('Needs support: ' + link + '\n')
+                downloaded = False
+                logger.info("No mathces: No Flickr support".format(link))
 
             # Reddit submission
             elif 'reddit.com/r/' in link:
                 downloaded = False
-                with open(os.path.join(base_dir, 'error.txt'), 'a+') as logFile:
-                    logFile.write('Link to reddit ' + link + ' by ' + str(submission.author) + ' \n')
-                    logFile.close()
+                logger.info("No mathces: Reddit submission {}".format(link))
+
             
             # All others are caught by youtube-dl, if still no match it's written to the log file
             else:
@@ -126,6 +133,9 @@ def grabber(subR, base_dir, posts, sort, search):
 
             if downloaded:
                 db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
+            bar_percent(counter, len(submission_list), 50)
+
+    print()
 
 def checkBlacklist(submission):
     for item in config['reddit']['blacklist']:
@@ -146,6 +156,12 @@ def formatName(title):
     title = re.sub('[?/|\\\:<>*"]', '', title)
     if len(title) > 211: title = title[:210]
     return title
+
+def bar_percent(progress, total_count, toolbar_width):
+    progress = int((progress/total_count) * toolbar_width)
+    if progress <= toolbar_width:
+        marks = "-" * (progress) +" " * (toolbar_width-progress)
+        print("[{}] {}%".format(marks, int((progress/toolbar_width)*100)), end='\r')
 
 def feeder(subR, posts, base_dir, sort, search):
     # reloads config file
@@ -193,6 +209,7 @@ def main(args):
             sys.exit()
     else:
         posts = 50
+    logger.debug('Posts to download {}'.format(posts))
 
     # output
     if args.output and args.subreddit:
@@ -200,6 +217,7 @@ def main(args):
         if not os.path.exists(base_dir): os.makedirs(base_dir)
     else:
         base_dir = os.getcwd()
+    logger.debug('Base directory for download {}'.format(base_dir))
 
     # sort
     sort = 'hot'
@@ -208,10 +226,12 @@ def main(args):
     elif args.sort:
         logger.error("Please enter hot, new or top for sort")
         sys.exit()
-    
+    logger.debug('Reddit sorting {}'.format(sort))
+
     search = None
     if args.search:
         search = args.search
+    logger.debug('Reddit search {}'.format(search))
 
     # blacklist
     if args.blacklist:
@@ -233,6 +253,7 @@ def main(args):
     else:
         template = os.path.join('%(subreddit)s','%(author)s')
     save = Save(base_dir, template)
+    logger.debug('Output template {}'.format(save))
 
     # initialise database
     global db
