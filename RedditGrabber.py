@@ -92,11 +92,14 @@ def grabber(subR, base_dir, posts, sort, search):
 
             # Imgur
             elif re.match(Imgur.valid_url, link):
-                Imgur(link, title, save.get_dir(path))
+                if not Imgur(link, title, save.get_dir(path)):
+                    downloaded = False
 
             # Giphy
             elif re.match(Giphy.valid_url, link):
-                Giphy(link, title, save.get_dir(path))
+                if not Giphy(link, title, save.get_dir(path)):
+                    downloaded = False
+                print(downloaded)
 
             # Tenor
             elif re.match(Tenor.valid_url, link):

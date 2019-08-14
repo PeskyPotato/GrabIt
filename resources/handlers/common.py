@@ -51,7 +51,9 @@ class Common:
 
         self.logger.debug("Saving {} with extension {}".format(self.link, ext))
 
-        self.save_image()
+        if not self.save_image():
+            return False
+        return True
 
     def save_image(self, current_retry=1):
         try:
@@ -64,6 +66,8 @@ class Common:
                 self.save_image(current_retry)
             else:
                 self.logger.error("{}, failed {}".format(str(e), self.link))
+                return False
+        return True
 
     def get_html(self):
         req = Request(

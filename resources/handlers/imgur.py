@@ -5,9 +5,10 @@ import logging
 
 from .common import Common
 
+
 class Imgur(Common):
-    valid_url = r'https?://(?:i\.|m\.)?imgur\.com/((?:a|(gallery))/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>[^/])*'
-    
+    valid_url = r'https?://(?:i\.|m\.)?imgur\.com/((?P<col>(a|(gallery)))/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>[^/])*'
+
     def __init__(self, link, name, direct):
         super().__init__(link, name, direct)
         self.data = {}
@@ -21,13 +22,14 @@ class Imgur(Common):
                 self.save_album()
             else:
                 self.save_single()
+        return False
 
     def sanitize_url(self):
-        self.link = self.link.replace("m.imgur", "imgur")
-        self.link = re.sub('#(.*)', '', self.link)
-        ext = re.match(self.valid_url, self.link).group('ext')
-        if ext:
-            self.link = self.link.replace(ext, "")
+        match = re.match(self.valid_url, self.link)
+        if match.group('col'):
+            self.link = 'https://imgur.com/{}/{}'.format(match.group('col'), match.group('id'))
+        else:
+            self.link = 'https://imgur.com/{}'.format(match.group('id'))
         self.logger.debug('Sanitized link {}'.format(self.link))
 
     def get_data(self):
@@ -42,7 +44,7 @@ class Imgur(Common):
                 return data
         self.logger.warning("Imgur album page returning None")
         return None
-    
+
     def write_description(self, txt_file, description):
         if description:
             with open(txt_file, "w+") as f:
@@ -56,16 +58,18 @@ class Imgur(Common):
             title = self.data.get("title")
         title = self.format_name(title)
         self.direct = os.path.join(self.direct, "{}-{}{}".format(title, self.data["hash"], self.data["ext"]))
-        self.logger.debug("Saving single image {}".format(self.link))
+        self.logger.debug("Saved single image {}".format(self.link))
 
-        self.save_image()
-        self.write_description(os.path.join(direct_description,"{}-{}.txt".format(title, self.data["hash"])), self.data["description"])
-    
+        if not self.save_image():
+            return False
+        self.write_description(os.path.join(direct_description, "{}-{}.txt".format(title, self.data["hash"])), self.data["description"])
+        return True
+
     def save_album(self):
         album_id = self.link.rsplit('/', 1)[-1]
         if '#' in album_id:
             album_id = album_id.rsplit('#', 1)[-2]
-        
+
         self.logger.debug("Saving album {} - album_id {}".format(self.link, album_id))
         if self.data["title"]:
             folder_name = self.format_name(self.data["title"])
@@ -74,19 +78,21 @@ class Imgur(Common):
         try:
             images = self.data["album_images"]["images"]
         except KeyError:
-            self.save_single()
-            return
+            if not self.save_single():
+                return False
+            return True
         folder = os.path.join(self.direct, folder_name)
         if not os.path.exists(folder):
             os.makedirs(folder)
-        
+
         counter = 1
         for image in images:
             self.link = "https://imgur.com/{}{}".format(image["hash"], image["ext"])
             self.direct = os.path.join(folder, "{}-{}{}".format(counter, image["hash"], image["ext"]))
 
-            self.save_image()
-            self.write_description(os.path.join(folder,"{}-{}.txt").format(counter,image["hash"]), image["description"])
-            
+            if not self.save_image():
+                return False
+            self.write_description(os.path.join(folder, "{}-{}.txt").format(counter, image["hash"]), image["description"])
             counter += 1
         logging.debug("Album complete {}".format(self.link))
+        return True
