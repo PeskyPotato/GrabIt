@@ -78,7 +78,6 @@ def grabber(subR, base_dir, posts, sort, search):
             print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
             logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, submission.subreddit, str(submission.author)))
             title = formatName(title)
-
             path = {'author': str(submission.author), 'subreddit': str(submission.subreddit)}
 
             # Selftext post
@@ -99,7 +98,6 @@ def grabber(subR, base_dir, posts, sort, search):
             elif re.match(Giphy.valid_url, link):
                 if not Giphy(link, title, save.get_dir(path)):
                     downloaded = False
-                print(downloaded)
 
             # Tenor
             elif re.match(Tenor.valid_url, link):

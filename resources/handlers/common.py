@@ -11,7 +11,7 @@ import logging
 
 
 class Common:
-    valid_url = r'((.)+.(?P<ext>jpg|png|gif|jpeg|mp4))|(https?://i.reddituploads.com/(.)+)'
+    valid_url = r'((.)+\.(?P<ext>jpg|png|gif|jpeg|mp4))|(https?://i.reddituploads.com/(.)+)'
 
     def __init__(self, link, name, direct):
         self.logger = logging.getLogger(__name__)
