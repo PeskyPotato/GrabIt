@@ -26,118 +26,6 @@ save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
 db = None
 
-
-def grabber(subR, base_dir, posts, sort, search):
-    # Initialise Reddit
-    reddit = praw.Reddit(client_id=config["reddit"]["creds"]["client_id"],
-                         client_secret=config["reddit"]["creds"]["client_secret"],
-                         user_agent=config["reddit"]["creds"]["user_agent"])
-    submissions = []
-    if search:
-        logger.debug('Search term: {}'.format(search))
-        if 'u/' in subR or '/u/' in subR:
-            logger.warning('Cannot search redditors: {}'.format(subR))
-        else:
-            submissions=reddit.subreddit(subR).search(search, sort=sort.lower(), limit=int(posts))
-
-    else:
-        if 'u/' in subR or '/u/' in subR:
-            if '/u/' in subR: subR = subR[3:]
-            elif 'u/'in subR: subR = subR[2:]
-            if sort == 'hot': submissions = reddit.redditor(subR).submissions.hot(limit = int(posts))
-            elif sort == 'new': submissions = reddit.redditor(subR).submissions.new(limit = int(posts))
-            elif sort =='top': submissions = reddit.redditor(subR).submissions.top(limit = int(posts))
-        else:
-            if sort == 'hot': submissions = reddit.subreddit(subR).hot(limit = int(posts))
-            elif sort == 'new': submissions = reddit.subreddit(subR).new(limit = int(posts))
-            elif sort == 'top': submissions = reddit.subreddit(subR).top(limit = int(posts))
-    
-    submission_list = []
-    for submission in submissions:
-        submission_list.append(submission)
-        print('Loading', len(submission_list),'posts', end='\r')
-    
-    counter = 0
-    for submission in submission_list:
-        counter += 1
-        bar_percent(counter, len(submission_list), 50)
-        title = submission.title
-        logger.debug("Submission url {}".format(submission.url))
-        link = submission.url
-        ''' django URL validation regex '''
-        regex = re.compile(
-                r'^(?:http|ftp)s?://' # http:// or https://
-                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-                r'localhost|' #localhost...
-                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-                r'(?::\d+)?' # optional port
-                r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-
-        if not (db.checkPost(submission.permalink.split("/")[4])) and checkBlacklist(submission) and re.match(regex, link):
-            downloaded = True
-            print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
-            logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, submission.subreddit, str(submission.author)))
-            title = formatName(title)
-            path = {'author': str(submission.author), 'subreddit': str(submission.subreddit)}
-
-            # Selftext post
-            if submission.is_self:
-                with open(os.path.join(save.get_dir(path),'{}-{}.txt'.format(str(submission.id), formatName(title))), 'a+') as f:
-                    f.write(str(submission.selftext.encode('utf-8')))
-
-            # Link to a jpg, png, gifv, gif, jpeg
-            elif re.match(Common.valid_url, link):
-                Common(link, '{}-{}'.format(str(submission.id),title), save.get_dir(path))
-
-            # Imgur
-            elif re.match(Imgur.valid_url, link):
-                if not Imgur(link, title, save.get_dir(path)):
-                    downloaded = False
-
-            # Giphy
-            elif re.match(Giphy.valid_url, link):
-                if not Giphy(link, title, save.get_dir(path)):
-                    downloaded = False
-
-            # Tenor
-            elif re.match(Tenor.valid_url, link):
-                Tenor(link, title, save.get_dir(path))
-
-            # Flickr
-            elif 'flickr.com/' in link:
-                downloaded = False
-                logger.info("No mathces: No Flickr support".format(link))
-
-            # Reddit submission
-            elif 'reddit.com/r/' in link:
-                downloaded = False
-                logger.info("No mathces: Reddit submission {}".format(link))
-
-            
-            # All others are caught by youtube-dl, if still no match it's written to the log file
-            else:
-                folder = save.get_dir(path)
-                ydl_opts = {
-                    'format': 'best',
-                    'outtmpl': os.path.join(folder, '%(id)s-%(title)s.%(ext)s'),
-                    'quiet': 'quiet'
-                }
-                try:
-                    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                        ydl.download([link])
-                except youtube_dl.utils.DownloadError:
-                    logger.info("No matches: {}".format(link))
-                    downloaded = False
-                except Exception as e:
-                    logger.error('Exception {} on {}'.format(e, link))
-                    downloaded = False
-
-            if downloaded:
-                db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
-            bar_percent(counter, len(submission_list), 50)
-
-    print()
-
 def checkBlacklist(submission):
     for item in config['reddit']['blacklist']:
         if ('u/' in item or '/u/' in item):
@@ -158,20 +46,130 @@ def formatName(title):
     if len(title) > 211: title = title[:210]
     return title
 
-def bar_percent(progress, total_count, toolbar_width):
-    progress = int((progress/total_count) * toolbar_width)
-    if progress <= toolbar_width:
-        marks = "-" * (progress) +" " * (toolbar_width-progress)
-        print("[{}] {}%".format(marks, int((progress/toolbar_width)*100)), end='\r')
+def bar_percent(progress_raw, total_count, toolbar_width):
+    if total_count > 0:
+        progress = int((progress_raw/total_count) * toolbar_width)
+        if progress <= toolbar_width:
+            marks = '-' * (progress) + ' ' * (toolbar_width-progress)
+            print('[{}] {}%'.format(marks, int((progress/toolbar_width)*100)), '[{}/{}]'.format(progress_raw, total_count), end='\r')
 
 def feeder(subR, posts, base_dir, sort, search):
     # reloads config file
     with open('./resources/config.json') as f:
         config = json.load(f)
-    
+
     logger.info("*****  {}  *****".format(subR))
     try:
-        grabber(subR, base_dir, posts, sort, search)
+        # grabber(subR, base_dir, posts, sort, search)
+        # Initialise Reddit
+        reddit = praw.Reddit(client_id=config["reddit"]["creds"]["client_id"],
+                            client_secret=config["reddit"]["creds"]["client_secret"],
+                            user_agent=config["reddit"]["creds"]["user_agent"])
+        submissions = []
+        if search:
+            logger.debug('Search term: {}'.format(search))
+            if 'u/' in subR or '/u/' in subR:
+                logger.warning('Cannot search redditors: {}'.format(subR))
+            else:
+                submissions = reddit.subreddit(subR).search(search, sort=sort.lower(), limit=int(posts))
+
+        else:
+            if 'u/' in subR or '/u/' in subR:
+                if '/u/' in subR: subR = subR[3:]
+                elif 'u/'in subR: subR = subR[2:]
+                if sort == 'hot': submissions = reddit.redditor(subR).submissions.hot(limit=int(posts))
+                elif sort == 'new': submissions = reddit.redditor(subR).submissions.new(limit=int(posts))
+                elif sort == 'top': submissions = reddit.redditor(subR).submissions.top(limit=int(posts))
+            else:
+                if sort == 'hot': submissions = reddit.subreddit(subR).hot(limit=int(posts))
+                elif sort == 'new': submissions = reddit.subreddit(subR).new(limit=int(posts))
+                elif sort == 'top': submissions = reddit.subreddit(subR).top(limit=int(posts))
+
+        submission_queue = []
+        for submission in submissions:
+            submission_queue.append(submission)
+            print('Loading', len(submission_queue), 'posts', end='\r')
+
+        counter = 0
+        for submission in submission_queue:
+            counter += 1
+            title = submission.title
+            logger.debug("Submission url {}".format(submission.url))
+            link = submission.url
+            ''' django URL validation regex '''
+            regex = re.compile(
+                    r'^(?:http|ftp)s?://' # http:// or https://
+                    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+                    r'localhost|' #localhost...
+                    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+                    r'(?::\d+)?' # optional port
+                    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+            if not (db.checkPost(submission.permalink.split("/")[4])) and checkBlacklist(submission) and re.match(regex, link):
+                downloaded = True
+                print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
+                logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, submission.subreddit, str(submission.author)))
+                title = formatName(title)
+                path = {'author': str(submission.author), 'subreddit': str(submission.subreddit)}
+                bar_percent(counter, len(submission_queue), 50)
+
+                # Selftext post
+                if submission.is_self:
+                    with open(os.path.join(save.get_dir(path), '{}-{}.txt'.format(str(submission.id), formatName(title))), 'a+') as f:
+                        f.write(str(submission.selftext.encode('utf-8')))
+
+                # Link to a jpg, png, gifv, gif, jpeg
+                elif re.match(Common.valid_url, link):
+                    Common(link, '{}-{}'.format(str(submission.id), title), save.get_dir(path))
+
+                # Imgur
+                elif re.match(Imgur.valid_url, link):
+                    if not Imgur(link, title, save.get_dir(path)):
+                        downloaded = False
+
+                # Giphy
+                elif re.match(Giphy.valid_url, link):
+                    if not Giphy(link, title, save.get_dir(path)):
+                        downloaded = False
+
+                # Tenor
+                elif re.match(Tenor.valid_url, link):
+                    Tenor(link, title, save.get_dir(path))
+
+                # Flickr
+                elif 'flickr.com/' in link:
+                    downloaded = False
+                    logger.info("No mathces: No Flickr support".format(link))
+
+                # Reddit submission
+                elif 'reddit.com/r/' in link:
+                    downloaded = False
+                    logger.info("No mathces: Reddit submission {}".format(link))
+
+                # All others are caught by youtube-dl, if still no match it's written to the log file
+                else:
+                    folder = save.get_dir(path)
+                    ydl_opts = {
+                        'format': 'best',
+                        'outtmpl': os.path.join(folder, '%(id)s-%(title)s.%(ext)s'),
+                        'quiet': 'quiet'
+                    }
+                    try:
+                        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                            ydl.download([link])
+                    except youtube_dl.utils.DownloadError:
+                        logger.info("No matches: {}".format(link))
+                        downloaded = False
+                    except Exception as e:
+                        logger.error('Exception {} on {}'.format(e, link))
+                        downloaded = False
+
+                if downloaded:
+                    db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
+        bar_percent(counter, len(submission_queue), 50)
+
+        print()
+
     except exceptions.ResponseException as err:
         if "received 401 HTTP response" in str(err):
             logger.error("{} Check Reddit API credentials".format(err))
@@ -181,7 +179,6 @@ def feeder(subR, posts, base_dir, sort, search):
             logger.error(str(traceback.TracebackException.from_exception(err)) + " Check username or subreddit: " + subR)
 
 def main(args):
-
     subR = None
     filepath = None
 
