@@ -4,7 +4,7 @@ import re
 import sys
 import os
 import time
-import argparse
+from resources.parser import Parser
 import youtube_dl
 import json
 import traceback
@@ -20,11 +20,16 @@ from resources.handlers.common import Common
 from resources.save import Save
 from resources.db_interface import DBInterface
 
-with open('./resources/config.json') as f:
-    config = json.load(f)
+try:
+    with open('./resources/config.json') as f:
+        config = json.load(f)
+except json.decoder.JSONDecodeError:
+    print('Invalid config file')
+    sys.exit()
 save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
 db = None
+
 
 def checkBlacklist(submission):
     for item in config['reddit']['blacklist']:
@@ -37,14 +42,14 @@ def checkBlacklist(submission):
             return False
     return True
 
-'''
-Removes special characters and shortens long
-filenames
-'''
+
 def formatName(title):
-    title = re.sub('[?/|\\\:<>*"]', '', title)
-    if len(title) > 211: title = title[:210]
+    '''Removes special characters and shortens long filenames'''
+    title = re.sub('[?/|\\:<>*"]', '', title)
+    if len(title) > 211:
+        title = title[:210]
     return title
+
 
 def bar_percent(progress_raw, total_count, toolbar_width):
     if total_count > 0:
@@ -53,18 +58,23 @@ def bar_percent(progress_raw, total_count, toolbar_width):
             marks = '-' * (progress) + ' ' * (toolbar_width-progress)
             print('[{}] {}%'.format(marks, int((progress/toolbar_width)*100)), '[{}/{}]'.format(progress_raw, total_count), end='\r')
 
-def feeder(subR, posts, base_dir, sort, search):
+
+def feeder(subR, parser):
+    posts = parser.posts
+    sort = parser.sort
+    search = parser.search
+
     # reloads config file
     with open('./resources/config.json') as f:
         config = json.load(f)
 
     logger.info("*****  {}  *****".format(subR))
     try:
-        # grabber(subR, base_dir, posts, sort, search)
-        # Initialise Reddit
-        reddit = praw.Reddit(client_id=config["reddit"]["creds"]["client_id"],
-                            client_secret=config["reddit"]["creds"]["client_secret"],
-                            user_agent=config["reddit"]["creds"]["user_agent"])
+        reddit = praw.Reddit(
+            client_id=config["reddit"]["creds"]["client_id"],
+            client_secret=config["reddit"]["creds"]["client_secret"],
+            user_agent=config["reddit"]["creds"]["user_agent"]
+        )
         submissions = []
         if search:
             logger.debug('Search term: {}'.format(search))
@@ -77,13 +87,19 @@ def feeder(subR, posts, base_dir, sort, search):
             if 'u/' in subR or '/u/' in subR:
                 if '/u/' in subR: subR = subR[3:]
                 elif 'u/'in subR: subR = subR[2:]
-                if sort == 'hot': submissions = reddit.redditor(subR).submissions.hot(limit=int(posts))
-                elif sort == 'new': submissions = reddit.redditor(subR).submissions.new(limit=int(posts))
-                elif sort == 'top': submissions = reddit.redditor(subR).submissions.top(limit=int(posts))
+                if sort == 'hot':
+                    submissions = reddit.redditor(subR).submissions.hot(limit=int(posts))
+                elif sort == 'new':
+                    submissions = reddit.redditor(subR).submissions.new(limit=int(posts))
+                elif sort == 'top':
+                    submissions = reddit.redditor(subR).submissions.top(limit=int(posts))
             else:
-                if sort == 'hot': submissions = reddit.subreddit(subR).hot(limit=int(posts))
-                elif sort == 'new': submissions = reddit.subreddit(subR).new(limit=int(posts))
-                elif sort == 'top': submissions = reddit.subreddit(subR).top(limit=int(posts))
+                if sort == 'hot':
+                    submissions = reddit.subreddit(subR).hot(limit=int(posts))
+                elif sort == 'new':
+                    submissions = reddit.subreddit(subR).new(limit=int(posts))
+                elif sort == 'top':
+                    submissions = reddit.subreddit(subR).top(limit=int(posts))
 
         submission_queue = []
         for submission in submissions:
@@ -98,12 +114,13 @@ def feeder(subR, posts, base_dir, sort, search):
             link = submission.url
             ''' django URL validation regex '''
             regex = re.compile(
-                    r'^(?:http|ftp)s?://' # http:// or https://
-                    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-                    r'localhost|' #localhost...
-                    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-                    r'(?::\d+)?' # optional port
-                    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+                r'^(?:http|ftp)s?://'  # http:// or https://
+                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+                r'localhost|'  # localhost...
+                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+                r'(?::\d+)?'  # optional port
+                r'(?:/?|[/?]\S+)$', re.IGNORECASE
+            )
 
             if not (db.checkPost(submission.permalink.split("/")[4])) and checkBlacklist(submission) and re.match(regex, link):
                 downloaded = True
@@ -167,7 +184,6 @@ def feeder(subR, posts, base_dir, sort, search):
                 if downloaded:
                     db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
         bar_percent(counter, len(submission_queue), 50)
-
         print()
 
     except exceptions.ResponseException as err:
@@ -178,80 +194,22 @@ def feeder(subR, posts, base_dir, sort, search):
         else:
             logger.error(str(traceback.TracebackException.from_exception(err)) + " Check username or subreddit: " + subR)
 
-def main(args):
+
+def main(parser):
+    # subreddit/user/text file
     subR = None
     filepath = None
 
-    if args.subreddit:
-        if '.txt' in args.subreddit: 
-            filepath = args.subreddit
-        else: 
-            subR = args.subreddit
-
-    # wait
-    if args.wait and args.subreddit:
-        try:
-            wait = int(args.wait)
-        except ValueError:
-            logger.error("Please enter an integer in seconds to wait")
-            sys.exit()
-    else:
-        wait = 600
-
-    # posts
-    if args.posts and args.subreddit:
-        try:
-            posts = int(args.posts)
-        except ValueError:
-            logger.error("Please enter an inter for the number of posts")
-            sys.exit()
-    else:
-        posts = 50
-    logger.debug('Posts to download {}'.format(posts))
-
-    # output
-    if args.output and args.subreddit:
-        base_dir = os.path.abspath(args.output)
-        if not os.path.exists(base_dir): os.makedirs(base_dir)
-    else:
-        base_dir = os.getcwd()
-    logger.debug('Base directory for download {}'.format(base_dir))
-
-    # sort
-    sort = 'hot'
-    if args.sort and (args.sort.lower() == 'hot' or args.sort.lower() == 'new' or args.sort.lower() == 'top') and args.subreddit:
-        sort = args.sort
-    elif args.sort:
-        logger.error("Please enter hot, new or top for sort")
-        sys.exit()
-    logger.debug('Reddit sorting {}'.format(sort))
-
-    search = None
-    if args.search:
-        search = args.search
-    logger.debug('Reddit search {}'.format(search))
-
-    # blacklist
-    if args.blacklist:
-        config["reddit"]["blacklist"].append(args.blacklist)
-
-    # reddit api credentials
-    if args.reddit_id:
-        config["reddit"]["creds"]["client_id"] = args.reddit_id
-    if args.reddit_secret:
-        config["reddit"]["creds"]["client_secret"] = args.reddit_secret
-    
-    with open('./resources/config.json', 'w') as f:
-        json.dump(config, f)
+    if parser.subreddit:
+        if '.txt' in parser.subreddit:
+            filepath = parser.subreddit
+        else:
+            subR = parser.subreddit
 
     # output template
     global save
-    if args.output_template:
-        template = args.output_template
-    else:
-        template = os.path.join('%(subreddit)s','%(author)s')
-    save = Save(base_dir, template)
-    logger.debug('Output template {}'.format(save))
+    save = Save(parser.base_dir, parser.template)
+    logger.debug('Output template set to {}'.format(save))
 
     # initialise database
     global db
@@ -261,7 +219,7 @@ def main(args):
         os.makedirs(db_path)
     db = DBInterface(config["general"]["database_location"])
 
-    if args.subreddit:
+    if parser.subreddit:
         # Passes subreddits to feeder
         while(True):
             if filepath is not None:
@@ -269,30 +227,16 @@ def main(args):
                     line = f.readline()
                     while line:
                         subR = "{}".format(line.strip())
-                        feeder(subR, posts, base_dir, sort, search)
+                        feeder(subR, parser)
                         line = f.readline()
             else:
-                feeder(subR, posts, base_dir, sort, search)
-            logger.info("Waiting {} seconds".format(wait))
-            time.sleep(wait)
+                feeder(subR, parser)
+            logger.info("Waiting {} seconds".format(parser.wait))
+            time.sleep(parser.wait)
 
 
 if __name__ == '__main__':
-    # Parses input
-    parser = argparse.ArgumentParser(description = "Archives submissions from Reddit")
-    parser.add_argument("subreddit", nargs = '?', help = "Enter a subreddit to backup or text file")
-    parser.add_argument("-w", "--wait", help = "Change wait time between subreddits in seconds")
-    parser.add_argument("-p", "--posts", help = "Number of posts to grab on each cycle")
-    parser.add_argument("-o", "--output", help = "Set base directory to start download")
-    parser.add_argument('-t', '--output_template', help = 'Specify output template for download')
-    parser.add_argument("--sort", help = "Sort submissions by 'hot', 'new' or 'top'")
-    parser.add_argument("-v", "--verbose", help = "Set verbose", action = "store_true")
-    parser.add_argument("--blacklist", help = "Avoid downloading a user or subreddit")
-    parser.add_argument('--search', help='Search for submissions in a subreddit')
-    parser.add_argument('--reddit_id', help = 'Reddit client ID')
-    parser.add_argument('--reddit_secret', help = 'Reddit client secret')
-
-    args = parser.parse_args()
+    parser = Parser()
 
     # verbose / logger
     log_path = config['general']['log_file']
@@ -316,12 +260,13 @@ if __name__ == '__main__':
                             datefmt='%m-%d %H:%M',
                             filename=log_file,
                             filemode=filemode)
-    except IsADirectoryError as e:
+    except IsADirectoryError:
         print('Log file not set correctly, check log_file in config')
         sys.exit()
 
     console = logging.StreamHandler()
-    if args.verbose and args.subreddit:  
+
+    if parser.verbose:
         console.setLevel(logging.DEBUG)
         formatter = ColoredFormatter("[%(name)s][%(levelname)s] %(message)s (%(filename)s:%(lineno)d)")
     else:
@@ -331,9 +276,12 @@ if __name__ == '__main__':
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
 
+    parser.setupLogger()
+    parser.checkArgs()
+
     # start program
     try:
-        main(args)
+        main(parser)
     except KeyboardInterrupt:
         logger.info("\nQuitting")
         sys.exit()
