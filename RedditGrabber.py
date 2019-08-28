@@ -221,7 +221,8 @@ def main(parser):
 
     if parser.subreddit:
         # Passes subreddits to feeder
-        while(True):
+        current_cycle = 0
+        while(current_cycle < parser.cycles):
             if filepath is not None:
                 with open(filepath) as f:
                     line = f.readline()
@@ -231,8 +232,10 @@ def main(parser):
                         line = f.readline()
             else:
                 feeder(subR, parser)
-            logger.info("Waiting {} seconds".format(parser.wait))
-            time.sleep(parser.wait)
+            if parser.cycles > 1:
+                logger.info("Waiting {} seconds".format(parser.wait))
+                time.sleep(parser.wait)
+            current_cycle += 1
 
 
 if __name__ == '__main__':

@@ -30,12 +30,14 @@ Below are all the optional arguments that you can use:
 
     -h, --help                     show this help message and exit
 
-    -w WAIT, --wait WAIT            Change wait time between subreddits in seconds
     -p POSTS, --posts POSTS         Number of posts to grab on each cycle
+    --search SEARCH                 Search for submissions in a subreddit
+    --sort SORT                     Sort submissions by 'hot', 'new' or 'top'
+    -w WAIT, --wait WAIT            Wait time between subreddits in seconds
+    -c CYCLES, --cycles CYCLES      Number of times to repeat after wait time
     -o OUTPUT, --output OUTPUT      Set base directory to start download
     -t OUTPUT_TEMPLATE, --output_template OUTPUT_TEMPLATE
                                     Specify output template for download
-    --sort SORT                     Sort submissions by 'hot', 'new' or 'top'
     -v, --verbose                   Sets verbose
     --blacklist BLACKLIST           Avoid downloading a user or subreddit
     --search SEARCH                 Search for submissions in a subreddit

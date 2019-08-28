@@ -16,12 +16,11 @@ class Parser:
             nargs="?",
             help="Enter a subreddit, user or text file to backup",
         )
-        parser.add_argument(
-            "-p", "--posts", help="Number of posts to grab on each cycle"
-        )
+        parser.add_argument("-p", "--posts", help="Number of posts to grab on each cycle")
         parser.add_argument("--search", help="Search for submissions in a subreddit")
         parser.add_argument("--sort", help='Sort submissions by "hot", "new" or "top"')
-        parser.add_argument("-w", "--wait", help="Change wait time in seconds between each cycle")
+        parser.add_argument("-w", "--wait", help="Wait time in seconds between each cycle")
+        parser.add_argument("-c", "--cycles", help="Number to times to repeat after wait time")
         parser.add_argument("-o", "--output", help="Set base directory")
         parser.add_argument("-t", "--output_template", help="Specify output template")
         parser.add_argument("-v", "--verbose", help="Set verbose", action="store_true")
@@ -45,6 +44,16 @@ class Parser:
         else:
             self.wait = 600
         self.logger.debug("Wait time set to  {} seconds".format(self.wait))
+
+        if self.args.cycles and self.args.subreddit:
+            try:
+                self.cycles = int(self.args.cycles)
+            except ValueError:
+                self.logger.error("Please enter an integer in seconds to wait")
+                sys.exit()
+        else:
+            self.cycles = 1
+        self.logger.debug("Cycles set to {}.".format(self.cycles))
 
         # posts
         if self.args.posts and self.args.subreddit:
