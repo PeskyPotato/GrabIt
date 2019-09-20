@@ -20,12 +20,12 @@ from resources.handlers.common import Common
 from resources.save import Save
 from resources.db_interface import DBInterface
 
-try:
-    with open('./resources/config.json') as f:
-        config = json.load(f)
-except json.decoder.JSONDecodeError:
-    print('Invalid config file')
-    sys.exit()
+# try:
+#     with open('./resources/config.json') as f:
+#         config = json.load(f)
+# except json.decoder.JSONDecodeError:
+#     print('Invalid config file')
+#     sys.exit()
 save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
 db = None
@@ -240,6 +240,9 @@ def main(parser):
 
 if __name__ == '__main__':
     parser = Parser()
+
+    with open('./resources/config.json') as f:
+        config = json.load(f)
 
     # verbose / logger
     log_path = config['general']['log_file']

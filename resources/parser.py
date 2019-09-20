@@ -7,7 +7,10 @@ import os
 
 class Parser:
     def __init__(self):
-        with open("resources/config.json") as config_json:
+        if not (os.path.isfile("./resources/config.json")):
+            self.initConfig()
+
+        with open("./resources/config.json") as config_json:
             self.config = json.load(config_json)
 
         parser = argparse.ArgumentParser(description="Archives submissions from Reddit")
@@ -32,6 +35,40 @@ class Parser:
 
         self.subreddit = self.args.subreddit
         self.verbose = self.args.verbose
+    
+    def initConfig(self):
+        text = input("Config file does not exist\nWould you like to create one? [Y/n]")
+        if text == "" or text.strip()[0].lower() == 'y':
+            config = {
+                "general": {
+                    "database_location": "./downloaded.db",
+                    "logger_append": False,
+                    "log_file": "./grabber.log",
+                    "log_timestamp": False
+                },
+                "reddit": {
+                    "creds": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "user_agent": "Downloads submissions by user/subreddit"
+                    },
+                    "blacklist": []
+                },
+                "media_download": {
+                    "retries": 3,
+                    "wait_time": 60
+                }
+            }
+            client_id = input("Enter Reddit client ID: ")
+            config["reddit"]["creds"]["client_id"] = client_id.strip()
+            client_secret = input("Enter Reddit client secret: ")
+            config["reddit"]["creds"]["client_secret"] = client_secret.strip()
+            with open('./resources/config.json', 'w') as f:
+                json.dump(config, f)
+        else:
+            print("Quiting")
+            sys.exit(0)
+
 
     def checkArgs(self):
         # wait
