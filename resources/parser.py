@@ -17,7 +17,7 @@ class Parser:
         parser.add_argument(
             "subreddit",
             nargs="?",
-            help="Enter a subreddit, user or text file to backup",
+            help="Enter a subreddit, user, submission url or text file to backup",
         )
         parser.add_argument("-p", "--posts", help="Number of posts to grab on each cycle")
         parser.add_argument("--search", help="Search for submissions in a subreddit")

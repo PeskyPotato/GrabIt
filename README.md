@@ -17,7 +17,7 @@ Add the Reddit API client ID and secret through the terminal as shown below, rep
 If you do not wish to enter them through the terminal you can also enter the client id and secret in the config.json file in the resources folder.
 
 ## Usage and Arguments
-Subreddits and users are positional arguments and must be entered at the start. Subreddits must be entered with any prefix whereas users must be untered with a "u/" before the username.
+Subreddits and users or a submission url are positional arguments and must be entered at the start. Subreddits must be entered without any prefix whereas users must be untered with a "u/" before the username.
 To download from a single subreddit, in this case /r/diy
 
     python3 RedditGrabber.py diy
