@@ -1,6 +1,6 @@
-# RedditImageBackup
+# GrabIt
 
-RedditImageBackup is a tool built to archive self-posts, images, gifs and videos from subreddit and users. This program works through the command line and uses Python 3.
+GrabIt is a tool built to archive self-posts, images, gifs and videos from subreddit and users from Reddit. This program works through the command line and uses Python 3.
 
 ## Installation
 
