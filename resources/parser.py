@@ -21,7 +21,7 @@ class Parser:
         )
         parser.add_argument("-p", "--posts", help="Number of posts to grab on each cycle")
         parser.add_argument("--search", help="Search for submissions in a subreddit")
-        parser.add_argument("--sort", help='Sort submissions by "hot", "new" or "top"')
+        parser.add_argument("--sort", help='Sort submissions by "hot", "new", "top", or "controversial"')
         parser.add_argument("-w", "--wait", help="Wait time in seconds between each cycle")
         parser.add_argument("-c", "--cycles", help="Number to times to repeat after wait time")
         parser.add_argument("-o", "--output", help="Set base directory")
@@ -121,10 +121,11 @@ class Parser:
                 self.args.sort.lower() == "hot"
                 or self.args.sort.lower() == "new"
                 or self.args.sort.lower() == "top"
+                or self.args.sort.lower() == "controversial"
             )
             and self.args.subreddit
         ):
-            self.sort = self.args.sort
+            self.sort = self.args.sort.lower()
         elif self.args.sort and self.subreddit:
             self.logger.error("Please enter hot, new or top for sort")
             sys.exit()

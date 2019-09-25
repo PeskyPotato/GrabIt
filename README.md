@@ -32,7 +32,7 @@ Below are all the optional arguments that you can use:
 
     -p POSTS, --posts POSTS         Number of posts to grab on each cycle
     --search SEARCH                 Search for submissions in a subreddit
-    --sort SORT                     Sort submissions by 'hot', 'new' or 'top'
+    --sort SORT                     Sort submissions by "hot", "new", "top", or "controversial"
     -w WAIT, --wait WAIT            Wait time between subreddits in seconds
     -c CYCLES, --cycles CYCLES      Number of times to repeat after wait time
     -o OUTPUT, --output OUTPUT      Set base directory to start download

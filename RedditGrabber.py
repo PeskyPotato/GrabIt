@@ -20,12 +20,6 @@ from resources.handlers.common import Common
 from resources.save import Save
 from resources.db_interface import DBInterface
 
-# try:
-#     with open('./resources/config.json') as f:
-#         config = json.load(f)
-# except json.decoder.JSONDecodeError:
-#     print('Invalid config file')
-#     sys.exit()
 save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
 db = None
@@ -167,6 +161,9 @@ def feeder(subR, parser):
                     submissions = reddit.redditor(subR).submissions.new(limit=int(posts))
                 elif sort == 'top':
                     submissions = reddit.redditor(subR).submissions.top(limit=int(posts))
+                elif sort == 'controversial':
+                    submissions = reddit.redditor(subR).submissions.controversial(limit=int(posts))
+
             else:
                 if sort == 'hot':
                     submissions = reddit.subreddit(subR).hot(limit=int(posts))
@@ -174,6 +171,8 @@ def feeder(subR, parser):
                     submissions = reddit.subreddit(subR).new(limit=int(posts))
                 elif sort == 'top':
                     submissions = reddit.subreddit(subR).top(limit=int(posts))
+                elif sort == 'controversial':
+                    submissions = reddit.subreddit(subR).controversial(limit=int(posts))
         else:
             submissions = [reddit.submission(url=subR)]
 
