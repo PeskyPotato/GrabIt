@@ -150,7 +150,6 @@ def feeder(subR, parser):
                 logger.warning('Cannot search redditors: {}'.format(subR))
             else:
                 submissions = reddit.subreddit(subR).search(search, sort=sort.lower(), limit=int(posts))
-
         elif 'reddit.com' not in subR:
             if 'u/' in subR or '/u/' in subR:
                 if '/u/' in subR: subR = subR[3:]
@@ -160,9 +159,9 @@ def feeder(subR, parser):
                 elif sort == 'new':
                     submissions = reddit.redditor(subR).submissions.new(limit=int(posts))
                 elif sort == 'top':
-                    submissions = reddit.redditor(subR).submissions.top(limit=int(posts))
+                    submissions = reddit.redditor(subR).submissions.top(limit=int(posts), time_filter=parser.time_filter)
                 elif sort == 'controversial':
-                    submissions = reddit.redditor(subR).submissions.controversial(limit=int(posts))
+                    submissions = reddit.redditor(subR).submissions.controversial(limit=int(posts), time_filter=parser.time_filter)
 
             else:
                 if sort == 'hot':
@@ -170,9 +169,9 @@ def feeder(subR, parser):
                 elif sort == 'new':
                     submissions = reddit.subreddit(subR).new(limit=int(posts))
                 elif sort == 'top':
-                    submissions = reddit.subreddit(subR).top(limit=int(posts))
+                    submissions = reddit.subreddit(subR).top(limit=int(posts), time_filter=parser.time_filter)
                 elif sort == 'controversial':
-                    submissions = reddit.subreddit(subR).controversial(limit=int(posts))
+                    submissions = reddit.subreddit(subR).controversial(limit=int(posts), time_filter=parser.time_filter)
         else:
             submissions = [reddit.submission(url=subR)]
 

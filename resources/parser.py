@@ -22,6 +22,7 @@ class Parser:
         parser.add_argument("-p", "--posts", help="Number of posts to grab on each cycle")
         parser.add_argument("--search", help="Search for submissions in a subreddit")
         parser.add_argument("--sort", help='Sort submissions by "hot", "new", "top", or "controversial"')
+        parser.add_argument("--time_filter", help='Filter sorted submission by "all", "day", "hour", "month", "week", or "year"')
         parser.add_argument("-w", "--wait", help="Wait time in seconds between each cycle")
         parser.add_argument("-c", "--cycles", help="Number to times to repeat after wait time")
         parser.add_argument("-o", "--output", help="Set base directory")
@@ -131,6 +132,26 @@ class Parser:
             sys.exit()
         self.logger.debug("Reddit sorting set to {}".format(self.sort))
 
+        # time_filter
+        self.time_filter = "all"
+        if (
+            self.args.time_filter
+            and (
+                self.args.time_filter.lower() == "all"
+                or self.args.time_filter.lower() == "day"
+                or self.args.time_filter.lower() == "hour"
+                or self.args.time_filter.lower() == "month"
+                or self.args.time_filter.lower() == "week"
+                or self.args.time_filter.lower() == "year"
+            )
+            and self.args.subreddit
+        ):
+            self.time_filter = self.args.time_filter.lower()
+        elif self.args.time_filter and self.subreddit:
+            self.logger.error("Please enter all, day, hour, month, week, or year for time_filter")
+            sys.exit()
+        self.logger.debug("Reddit time_filter set to {}".format(self.time_filter))
+
         # search
         self.search = None
         if self.args.search:
@@ -159,4 +180,3 @@ class Parser:
     def setupLogger(self):
         """ Called after logger initialised """
         self.logger = logging.getLogger(__name__)
-        self.logger.debug("it's all gucci")
