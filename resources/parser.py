@@ -21,8 +21,8 @@ class Parser:
         )
         parser.add_argument("-p", "--posts", help="Number of posts to grab on each cycle")
         parser.add_argument("--search", help="Search for submissions in a subreddit")
-        parser.add_argument("--sort", help='Sort submissions by "hot", "new", "top", or "controversial"')
-        parser.add_argument("--time_filter", help='Filter sorted submission by "all", "day", "hour", "month", "week", or "year"')
+        parser.add_argument("--sort", help='Sort submissions by "relevance", "comments", "hot", "new", "top", or "controversial"')
+        parser.add_argument("--time_filter", help='Filter sorted submissions by "all", "day", "hour", "month", "week", or "year"')
         parser.add_argument("-w", "--wait", help="Wait time in seconds between each cycle")
         parser.add_argument("-c", "--cycles", help="Number to times to repeat after wait time")
         parser.add_argument("-o", "--output", help="Set base directory")
@@ -114,9 +114,27 @@ class Parser:
         self.output = self.args.output
         self.logger.debug("Base directory for download set to {}".format(self.base_dir))
 
+        # search
+        self.search = None
+        if self.args.search:
+            self.search = self.args.search
+        self.logger.debug('Reddit search set to "{}"'.format(self.search))
+
         # sort
         self.sort = "hot"
         if (
+            self.args.sort
+            and (
+                self.args.sort.lower() == "relevance"
+                or self.args.sort.lower() == "new"
+                or self.args.sort.lower() == "top"
+                or self.args.sort.lower() == "comments"
+            )
+            and self.args.subreddit
+            and self.args.search
+        ):
+            self.sort = self.args.sort.lower()
+        elif (
             self.args.sort
             and (
                 self.args.sort.lower() == "hot"
@@ -128,7 +146,7 @@ class Parser:
         ):
             self.sort = self.args.sort.lower()
         elif self.args.sort and self.subreddit:
-            self.logger.error("Please enter hot, new or top for sort")
+            self.logger.error("Incorrect use of sort: {}\nCheck https://github.com/LameLemon/GrabIt for help".format(self.args.sort.lower()))
             sys.exit()
         self.logger.debug("Reddit sorting set to {}".format(self.sort))
 
@@ -151,12 +169,6 @@ class Parser:
             self.logger.error("Please enter all, day, hour, month, week, or year for time_filter")
             sys.exit()
         self.logger.debug("Reddit time_filter set to {}".format(self.time_filter))
-
-        # search
-        self.search = None
-        if self.args.search:
-            self.search = self.args.search
-        self.logger.debug('Reddit search set to "{}"'.format(self.search))
 
         # blacklist
         if self.args.blacklist:

@@ -61,3 +61,12 @@ If you wish to avoid downloading a specific user or subreddit you can blacklist 
 
     python3 RedditGrabber.py --blacklist u/spez
     python3 RedditGrabber.py --blacklist AskReddit
+
+### Search
+You can search a subreddit using keywords along with sorting and time filters. Below are examples of a simple search on r/all for "breakfast cereal".
+
+    python3 RedditGrabber.py all --search "breakfast cereal"
+
+If you do not use the "--sort" flag then it will default to sorting by relevance, otherwise you can use "hot", "top", "new" or "comments". While using the search you can also get links by time using the "--time_filter" flag with "all", "day", "hour", "month", "week", or "year". Below is an example searching r/DataHoader for "sata fire" sorted by top submissions retrieving links only from the past year.
+
+    python3 RedditGrabber.py DataHoarder --search "sata fire" --sort top --time_filter year

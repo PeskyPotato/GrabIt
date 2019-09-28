@@ -149,7 +149,7 @@ def feeder(subR, parser):
             if 'u/' in subR or '/u/' in subR:
                 logger.warning('Cannot search redditors: {}'.format(subR))
             else:
-                submissions = reddit.subreddit(subR).search(search, sort=sort.lower(), limit=int(posts))
+                submissions = reddit.subreddit(subR).search(search, sort=sort.lower(), limit=int(posts),time_filter=parser.time_filter)
         elif 'reddit.com' not in subR:
             if 'u/' in subR or '/u/' in subR:
                 if '/u/' in subR: subR = subR[3:]
