@@ -80,9 +80,10 @@ class Parser:
                 self.logger.error("Please enter an integer in seconds to wait")
                 sys.exit()
         else:
-            self.wait = 600
+            self.wait = self.config["general"]["wait_time"]
         self.logger.debug("Wait time set to  {} seconds".format(self.wait))
 
+        # cycles
         if self.args.cycles and self.args.subreddit:
             try:
                 self.cycles = int(self.args.cycles)
@@ -90,7 +91,7 @@ class Parser:
                 self.logger.error("Please enter an integer in seconds to wait")
                 sys.exit()
         else:
-            self.cycles = 1
+            self.cycles = self.config["general"]["cycles"]
         self.logger.debug("Cycles set to {}.".format(self.cycles))
 
         # posts
@@ -101,7 +102,7 @@ class Parser:
                 self.logger.error("Please enter an inter for the number of posts")
                 sys.exit()
         else:
-            self.posts = 50
+            self.posts = self.config["general"]["posts"]
         self.logger.debug("Posts to download set to {}".format(self.posts))
 
         # output, sets base_dir
@@ -121,7 +122,7 @@ class Parser:
         self.logger.debug('Reddit search set to "{}"'.format(self.search))
 
         # sort
-        self.sort = "hot"
+        self.sort = self.config["general"]["sort"]
         if (
             self.args.sort
             and (
@@ -151,7 +152,7 @@ class Parser:
         self.logger.debug("Reddit sorting set to {}".format(self.sort))
 
         # time_filter
-        self.time_filter = "all"
+        self.time_filter = self.config["general"]["time_filter"]
         if (
             self.args.time_filter
             and (
