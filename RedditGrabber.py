@@ -52,7 +52,7 @@ def bar_percent(progress_raw, total_count, toolbar_width):
             marks = '-' * (progress) + ' ' * (toolbar_width-progress)
             print('[{}] {}%'.format(marks, int((progress/toolbar_width)*100)), '[{}/{}]'.format(progress_raw, total_count), end='\r')
 
-def getSubmission(submission):
+def getSubmission(submission, parser):
     title = submission.title
     logger.debug("Submission url {}".format(submission.url))
     link = submission.url
@@ -66,7 +66,7 @@ def getSubmission(submission):
         r'(?:/?|[/?]\S+)$', re.IGNORECASE
     )
 
-    if not (db.checkPost(submission.permalink.split("/")[4])) and checkBlacklist(submission) and re.match(regex, link):
+    if not (db.checkPost(submission.permalink.split("/")[4])) and checkBlacklist(submission) and re.match(regex, link) and (not(submission.over_18) or parser.allow_nsfw):
         downloaded = True
         print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
         logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, submission.subreddit, str(submission.author)))
@@ -126,6 +126,8 @@ def getSubmission(submission):
 
         if downloaded:
             db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
+    else:
+        logger.debug("Skipped submission url {}".format(submission.url))
 
 def feeder(subR, parser):
     posts = parser.posts
@@ -143,13 +145,19 @@ def feeder(subR, parser):
             client_secret=config["reddit"]["creds"]["client_secret"],
             user_agent=config["reddit"]["creds"]["user_agent"]
         )
+        
+        # gather submissions
         submissions = []
         if search:
             logger.debug('Search term: {}'.format(search))
             if 'u/' in subR or '/u/' in subR:
                 logger.warning('Cannot search redditors: {}'.format(subR))
             else:
-                submissions = reddit.subreddit(subR).search(search, sort=sort.lower(), limit=int(posts),time_filter=parser.time_filter)
+                include_over_18 = 'off'
+                if parser.allow_nsfw:
+                    include_over_18 = 'on'
+                submissions = reddit.subreddit(subR).search(search, sort=sort.lower(), 
+                    limit=int(posts), time_filter=parser.time_filter, params={'include_over_18': include_over_18})
         elif 'reddit.com' not in subR:
             if 'u/' in subR or '/u/' in subR:
                 if '/u/' in subR: subR = subR[3:]
@@ -183,7 +191,7 @@ def feeder(subR, parser):
         counter = 0
         for submission in submission_queue:
             counter += 1
-            getSubmission(submission)
+            getSubmission(submission, parser)
         bar_percent(counter, len(submission_queue), 50)
         print()
 

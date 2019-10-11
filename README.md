@@ -40,6 +40,7 @@ Below are all the optional arguments that you can use:
     -o OUTPUT, --output OUTPUT      Set base directory to start download
     -t OUTPUT_TEMPLATE, --output_template OUTPUT_TEMPLATE
                                     Specify output template for download
+    --allow_nsfw                    Include nsfw posts too
     -v, --verbose                   Sets verbose
     --blacklist BLACKLIST           Avoid downloading a user or subreddit
     --search SEARCH                 Search for submissions in a subreddit

@@ -2,3 +2,5 @@ todo.txt
 __pycache__/
 *.py[code]
 .vscode/
+*.db
+*.log

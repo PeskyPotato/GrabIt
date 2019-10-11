@@ -27,6 +27,7 @@ class Parser:
         parser.add_argument("-c", "--cycles", help="Number to times to repeat after wait time")
         parser.add_argument("-o", "--output", help="Set base directory")
         parser.add_argument("-t", "--output_template", help="Specify output template")
+        parser.add_argument("--allow_nsfw", help="Include nsfw posts", action="store_true")
         parser.add_argument("-v", "--verbose", help="Set verbose", action="store_true")
         parser.add_argument("--blacklist", help="Avoid downloading a user or subreddit")
         parser.add_argument("--reddit_id", help="Reddit client ID")
@@ -35,6 +36,7 @@ class Parser:
         self.args = parser.parse_args()
 
         self.subreddit = self.args.subreddit
+        self.allow_nsfw = self.args.allow_nsfw
         self.verbose = self.args.verbose
     
     def initConfig(self):
