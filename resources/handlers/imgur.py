@@ -7,7 +7,13 @@ from .common import Common
 
 
 class Imgur(Common):
-    valid_url = r'https?://(?:i\.|m\.)?imgur\.com/((?P<col>(a|(gallery)))/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>[^/])*'
+    # Tested link formats
+    # https://imgur.com/r/humanporn/tHNQLyz
+    # https://imgur.com/gallery/YhYQ36h
+    # https://imgur.com/a/hWjM8
+    # https://i.imgur.com/aI3Avr9.jpg
+
+    valid_url = r'https?://(?:i\.|m\.)?imgur\.com/(?P<col>(a|(gallery)|(r/[a-z0-9]+))/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>\.[^/]+)*'
 
     def __init__(self, link, name, direct):
         super().__init__(link, name, direct)
