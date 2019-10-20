@@ -80,21 +80,23 @@ def getSubmission(submission, parser):
 
         # Link to a jpg, png, gifv, gif, jpeg
         elif re.match(Common.valid_url, link):
-            Common(link, '{}-{}'.format(str(submission.id), title), save.get_dir(path))
+            if not Common(link, '{}-{}'.format(str(submission.id), title), save.get_dir(path)).save():
+                downloaded = False
 
         # Imgur
         elif re.match(Imgur.valid_url, link):
-            if not Imgur(link, title, save.get_dir(path)):
+            if not Imgur(link, title, save.get_dir(path)).save():
                 downloaded = False
 
         # Giphy
         elif re.match(Giphy.valid_url, link):
-            if not Giphy(link, title, save.get_dir(path)):
+            if not Giphy(link, title, save.get_dir(path)).save():
                 downloaded = False
 
         # Tenor
         elif re.match(Tenor.valid_url, link):
-            Tenor(link, title, save.get_dir(path))
+            if not Tenor(link, title, save.get_dir(path)).save():
+                downloaded = False
 
         # Flickr
         elif 'flickr.com/' in link:

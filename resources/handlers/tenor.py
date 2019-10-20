@@ -19,8 +19,9 @@ class Tenor(Common):
         self.link = self.get_data()
         if self.link:
             super().save()
+            return True
         else:
-            return None
+            return False
 
     def sanitize_url(self):
         self.link = self.link.replace("http:", "https:")

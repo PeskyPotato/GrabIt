@@ -23,7 +23,7 @@ class Imgur(Common):
         self.sanitize_url()
         self.logger.debug("Saving {}".format(self.link))
         self.data = self.get_data()
-        if self.data:
+        if type(self.data) is dict:
             if self.data.get('is_album'):
                 self.save_album()
             else:
@@ -42,8 +42,8 @@ class Imgur(Common):
         '''Returns the JSON file with data on images.'''
         page_html = self.get_html()
         if page_html:
-            page_html = page_html.text
-            data_string = re.search('image( ){15}: (?P<data>(.)+)', page_html)
+            page_html_text = page_html.text
+            data_string = re.search('image( ){15}: (?P<data>(.)+)', page_html_text)
             if data_string:
                 data = data_string.group('data')[:-1]
                 data = json.loads(data)

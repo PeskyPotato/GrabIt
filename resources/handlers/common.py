@@ -23,8 +23,6 @@ class Common:
         self.direct = direct
         self.load_config()
 
-        self.save()
-
     def load_config(self):
         with open('resources/config.json') as json_data_file:
             data = json.load(json_data_file)
