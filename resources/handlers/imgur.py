@@ -4,6 +4,7 @@ import os
 import logging
 
 from .common import Common
+from resources.parser import Parser
 
 
 class Imgur(Common):
@@ -12,8 +13,9 @@ class Imgur(Common):
     # https://imgur.com/gallery/YhYQ36h
     # https://imgur.com/a/hWjM8
     # https://i.imgur.com/aI3Avr9.jpg
+    # https://imgur.com/a/sdHPt (disturbing content, NSFW)
 
-    valid_url = r'https?://(?:i\.|m\.)?imgur\.com/(?P<col>(a|(gallery)|(r/[a-z0-9]+))/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>\.[^/]+)*'
+    valid_url = r'https?://(?:i\.|m\.)?imgur\.com/(?P<col>(a|(gallery)|(r/[a-z0-9]+))/)?(/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>\.[^/]+)*'
 
     def __init__(self, link, name, direct):
         super().__init__(link, name, direct)
@@ -33,14 +35,20 @@ class Imgur(Common):
     def sanitize_url(self):
         match = re.match(self.valid_url, self.link)
         if match.group('col'):
-            self.link = 'https://imgur.com/{}/{}'.format(match.group('col'), match.group('id'))
+            self.link = 'https://imgur.com/{}/{}'.format(match.group('col')[:-1], match.group('id'))
         else:
             self.link = 'https://imgur.com/{}'.format(match.group('id'))
         self.logger.debug('Sanitized link {}'.format(self.link))
 
     def get_data(self):
         '''Returns the JSON file with data on images.'''
-        page_html = self.get_html()
+        imgur_cookie = Parser().config.get("imgur")
+        if not imgur_cookie:
+            imgur_cookie = {}
+        else:
+            imgur_cookie = {"Cookie": "authautologin={};".format(imgur_cookie.get("authautologin"))}
+
+        page_html = self.get_html(imgur_cookie)
         if page_html:
             page_html_text = page_html.text
             data_string = re.search('image( ){15}: (?P<data>(.)+)', page_html_text)

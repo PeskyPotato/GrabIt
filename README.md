@@ -28,7 +28,7 @@ You can also pass in a list of subreddits and users in the form of a txt file, w
 
 Below are all the optional arguments that you can use:
 
-    -h, --help                     show this help message and exit
+    -h, --help                      show this help message and exit
 
     -p POSTS, --posts POSTS         Number of posts to grab on each cycle
     --search SEARCH                 Search for submissions in a subreddit
@@ -46,6 +46,7 @@ Below are all the optional arguments that you can use:
     --search SEARCH                 Search for submissions in a subreddit
     --reddit_id REDDIT_ID           Reddit client ID
     --reddit_secret REDDIT_SECRET   Reddit client secret
+    --imgur_cookie IMGUR_COOKIE     Imgur authautologin cookie
 
 ### Output Template
 By default the program saves by subreddit then user, if you would like to change this you can specify an output template.
@@ -71,3 +72,12 @@ You can search a subreddit using keywords along with sorting and time filters. B
 If you do not use the "--sort" flag then it will default to sorting by relevance, otherwise you can use "hot", "top", "new" or "comments". While using the search you can also get links by time using the "--time_filter" flag with "all", "day", "hour", "month", "week", or "year". Below is an example searching r/DataHoader for "sata fire" sorted by top submissions retrieving links only from the past year.
 
     python3 RedditGrabber.py DataHoarder --search "sata fire" --sort top --time_filter year
+
+### Imgur Cookie
+Imgur requires users to login to view NSFW content on their site, therefore if you wish to download such content that has been posted to Reddit you will need to provide the cookie used to verify an Imgur login. 
+
+Using the flag provide the `authautologin` cookie data. You can find this cookie in your browser's storage inspector ([Chrome](https://developers.google.com/web/tools/chrome-devtools/storage/cookies), [Edge](https://docs.microsoft.com/en-us/microsoft-edge/devtools-guide/storage), [Firefox](https://developer.mozilla.org/en-US/docs/Tools/Storage_Inspector), [Safari](https://support.apple.com/en-gb/guide/safari-developer/dev43453fff5/mac)).
+
+    python3 RedditGrabber.py --imgur_cookie "abcdefghi9876%jklmnop54321qrstu"
+
+The cookies is then stored in the `config.json` file for future use. If you wish to update the cookie use the command above with the new value.

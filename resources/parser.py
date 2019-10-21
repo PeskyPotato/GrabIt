@@ -4,8 +4,20 @@ import logging
 import sys
 import os
 
+class Singleton(type):
+    def __init__(self, *args, **kwargs):
+        self.__instance = None
+        super().__init__(*args, **kwargs)
 
-class Parser:
+    def __call__(self, *args, **kwargs):
+        if self.__instance is None:
+            self.__instance = super().__call__(*args, **kwargs)
+            return self.__instance
+        else:
+            return self.__instance
+
+
+class Parser(metaclass=Singleton):
     def __init__(self):
         if not (os.path.isfile("./resources/config.json")):
             self.initConfig()
@@ -32,6 +44,7 @@ class Parser:
         parser.add_argument("--blacklist", help="Avoid downloading a user or subreddit")
         parser.add_argument("--reddit_id", help="Reddit client ID")
         parser.add_argument("--reddit_secret", help="Reddit client secret")
+        parser.add_argument("--imgur_cookie", help="Imgur authautologin cookie")
 
         self.args = parser.parse_args()
 
@@ -178,10 +191,20 @@ class Parser:
             self.config["reddit"]["blacklist"].append(self.args.blacklist)
             self.logger.info('Added "{}" to the blacklist'.format(self.args.blacklist))
 
+        # reddit api credentials
         if self.args.reddit_id:
             self.config["reddit"]["creds"]["client_id"] = self.args.reddit_id
         if self.args.reddit_secret:
             self.config["reddit"]["creds"]["client_secret"] = self.args.reddit_secret
+        
+        # imgur authautologin cookie
+        if self.args.imgur_cookie:
+            if not self.config.get("imgur"):
+                self.config["imgur"] = {
+                   "authautologin": self.args.imgur_cookie
+                }            
+            else:
+                self.config["imgur"]["authautologin"] = self.args.imgur_cookie
 
         with open("./resources/config.json", "w") as config_json:
             json.dump(self.config, config_json)
