@@ -227,11 +227,7 @@ def main(parser):
 
     # initialise database
     global db
-    db_path = config['general']['database_location']
-    db_path = db_path[:db_path.rfind('/')]
-    if not os.path.exists(db_path):
-        os.makedirs(db_path)
-    db = DBInterface(config["general"]["database_location"])
+    db = DBInterface(parser.db_location)
 
     if parser.subreddit:
         # Passes subreddits to feeder

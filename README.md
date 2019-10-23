@@ -47,6 +47,7 @@ Below are all the optional arguments that you can use:
     --reddit_id REDDIT_ID           Reddit client ID
     --reddit_secret REDDIT_SECRET   Reddit client secret
     --imgur_cookie IMGUR_COOKIE     Imgur authautologin cookie
+    --db_location                   Set location of database file
 
 ### Output Template
 By default the program saves by subreddit then user, if you would like to change this you can specify an output template.

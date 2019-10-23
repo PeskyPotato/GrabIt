@@ -16,7 +16,6 @@ class Singleton(type):
         else:
             return self.__instance
 
-
 class Parser(metaclass=Singleton):
     def __init__(self):
         if not (os.path.isfile("./resources/config.json")):
@@ -45,6 +44,7 @@ class Parser(metaclass=Singleton):
         parser.add_argument("--reddit_id", help="Reddit client ID")
         parser.add_argument("--reddit_secret", help="Reddit client secret")
         parser.add_argument("--imgur_cookie", help="Imgur authautologin cookie")
+        parser.add_argument("--db_location", help="Set location of database file")
 
         self.args = parser.parse_args()
 
@@ -123,8 +123,7 @@ class Parser(metaclass=Singleton):
         # output, sets base_dir
         if self.args.output and self.args.subreddit:
             self.base_dir = os.path.abspath(self.args.output)
-            if not os.path.exists(self.base_dir):
-                os.makedirs(self.base_dir)
+            self.ifNotExistMakeDir(self.base_dir)
         else:
             self.base_dir = os.getcwd()
         self.output = self.args.output
@@ -205,7 +204,16 @@ class Parser(metaclass=Singleton):
                 }            
             else:
                 self.config["imgur"]["authautologin"] = self.args.imgur_cookie
+        
+        # set database location
+        if self.args.db_location:
+            self.config["general"]["database_location"] = self.args.db_location
+            db_path = self.args.db_location[:self.args.db_location.rfind('/')]
+            self.ifNotExistMakeDir(db_path)
+            self.db_location = self.args.db_location
 
+
+        # writes config to json file (used by other classes)
         with open("./resources/config.json", "w") as config_json:
             json.dump(self.config, config_json)
 
@@ -218,3 +226,8 @@ class Parser(metaclass=Singleton):
     def setupLogger(self):
         """ Called after logger initialised """
         self.logger = logging.getLogger(__name__)
+
+    def ifNotExistMakeDir(self, dir):
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+

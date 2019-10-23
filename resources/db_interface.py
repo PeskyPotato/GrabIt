@@ -18,7 +18,7 @@ class DBInterface():
         try:
             self.conn = sqlite3.connect(self.name)
         except sqlite3.OperationalError as e:
-            self.logger.error('Check database_location in config, {}'.format(e))
+            self.logger.error('Database location incorrectly set, {}'.format(e))
             sys.exit()
         self.c = self.conn.cursor()
         self.c.execute("PRAGMA foreign_keys = ON;")
