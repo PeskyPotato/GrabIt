@@ -211,7 +211,8 @@ class Parser(metaclass=Singleton):
             db_path = self.args.db_location[:self.args.db_location.rfind('/')]
             self.ifNotExistMakeDir(db_path)
             self.db_location = self.args.db_location
-
+        else:
+            self.db_location = self.config["general"]["database_location"]
 
         # writes config to json file (used by other classes)
         with open("./resources/config.json", "w") as config_json:
