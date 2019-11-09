@@ -6,7 +6,6 @@ import os
 import time
 from resources.parser import Parser
 import youtube_dl
-import json
 import traceback
 import logging
 from datetime import datetime
@@ -51,6 +50,7 @@ def bar_percent(progress_raw, total_count, toolbar_width):
         if progress <= toolbar_width:
             marks = '-' * (progress) + ' ' * (toolbar_width-progress)
             print('[{}] {}%'.format(marks, int((progress/toolbar_width)*100)), '[{}/{}]'.format(progress_raw, total_count), end='\r')
+
 
 def getSubmission(submission, parser):
     title = submission.title
@@ -131,14 +131,13 @@ def getSubmission(submission, parser):
     else:
         logger.debug("Skipped submission url {}".format(submission.url))
 
+
 def feeder(subR, parser):
     posts = parser.posts
     sort = parser.sort
     search = parser.search
 
-    # reloads config file
-    with open('./resources/config.json') as f:
-        config = json.load(f)
+    parser.reload_parser()
 
     logger.info("*****  {}  *****".format(subR))
     try:
@@ -147,7 +146,7 @@ def feeder(subR, parser):
             client_secret=config["reddit"]["creds"]["client_secret"],
             user_agent=config["reddit"]["creds"]["user_agent"]
         )
-        
+
         # gather submissions
         submissions = []
         if search:
@@ -158,7 +157,7 @@ def feeder(subR, parser):
                 include_over_18 = 'off'
                 if parser.allow_nsfw:
                     include_over_18 = 'on'
-                submissions = reddit.subreddit(subR).search(search, sort=sort.lower(), 
+                submissions = reddit.subreddit(subR).search(search, sort=sort.lower(),
                     limit=int(posts), time_filter=parser.time_filter, params={'include_over_18': include_over_18})
         elif 'reddit.com' not in subR:
             if 'u/' in subR or '/u/' in subR:
@@ -251,8 +250,7 @@ def main(parser):
 if __name__ == '__main__':
     parser = Parser()
 
-    with open('./resources/config.json') as f:
-        config = json.load(f)
+    config = parser.config
 
     # verbose / logger
     log_path = config['general']['log_file']

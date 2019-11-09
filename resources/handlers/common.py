@@ -1,13 +1,14 @@
 import re
 import os
 import time
-import json
 import urllib.request
 from urllib.request import urlopen, Request, urlretrieve
 from urllib.error import URLError, HTTPError
 from http.client import RemoteDisconnected
 from bs4 import BeautifulSoup as soup
 import logging
+
+from resources.parser import Parser
 
 
 class Common:
@@ -24,8 +25,9 @@ class Common:
         self.load_config()
 
     def load_config(self):
-        with open('resources/config.json') as json_data_file:
-            data = json.load(json_data_file)
+        parser = Parser()
+        data = parser.config
+
         try:
             int(data["media_download"]["retries"])
             int(data["media_download"]["wait_time"])
@@ -66,9 +68,9 @@ class Common:
                 self.logger.error("{}, failed {}".format(str(e), self.link))
                 return False
         return True
-    
-    def get_html(self, headers_param = {}):
-        headers={
+
+    def get_html(self, headers_param={}):
+        headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36',
         }
         headers.update(headers_param)

@@ -1,8 +1,10 @@
 import argparse
-import json
 import logging
 import sys
 import os
+
+from resources.config import Config
+
 
 class Singleton(type):
     def __init__(self, *args, **kwargs):
@@ -16,13 +18,11 @@ class Singleton(type):
         else:
             return self.__instance
 
+
 class Parser(metaclass=Singleton):
     def __init__(self):
-        if not (os.path.isfile("./resources/config.json")):
-            self.initConfig()
-
-        with open("./resources/config.json") as config_json:
-            self.config = json.load(config_json)
+        self.config_class = Config("./resources/config.json")
+        self.config = self.config_class.config
 
         parser = argparse.ArgumentParser(description="Archives submissions from Reddit")
         parser.add_argument(
@@ -51,40 +51,6 @@ class Parser(metaclass=Singleton):
         self.subreddit = self.args.subreddit
         self.allow_nsfw = self.args.allow_nsfw
         self.verbose = self.args.verbose
-    
-    def initConfig(self):
-        text = input("Config file does not exist\nWould you like to create one? [Y/n]")
-        if text == "" or text.strip()[0].lower() == 'y':
-            config = {
-                "general": {
-                    "database_location": "./downloaded.db",
-                    "logger_append": False,
-                    "log_file": "./grabber.log",
-                    "log_timestamp": False
-                },
-                "reddit": {
-                    "creds": {
-                        "client_id": "",
-                        "client_secret": "",
-                        "user_agent": "Downloads submissions by user/subreddit"
-                    },
-                    "blacklist": []
-                },
-                "media_download": {
-                    "retries": 3,
-                    "wait_time": 60
-                }
-            }
-            client_id = input("Enter Reddit client ID: ")
-            config["reddit"]["creds"]["client_id"] = client_id.strip()
-            client_secret = input("Enter Reddit client secret: ")
-            config["reddit"]["creds"]["client_secret"] = client_secret.strip()
-            with open('./resources/config.json', 'w') as f:
-                json.dump(config, f)
-        else:
-            print("Quiting")
-            sys.exit(0)
-
 
     def checkArgs(self):
         # wait
@@ -95,7 +61,7 @@ class Parser(metaclass=Singleton):
                 self.logger.error("Please enter an integer in seconds to wait")
                 sys.exit()
         else:
-            self.wait = self.config["general"]["wait_time"]
+            self.wait = self.config.get("general").get("wait_time", self.config_class.default_config["general"]["wait_time"])
         self.logger.debug("Wait time set to  {} seconds".format(self.wait))
 
         # cycles
@@ -106,7 +72,7 @@ class Parser(metaclass=Singleton):
                 self.logger.error("Please enter an integer in seconds to wait")
                 sys.exit()
         else:
-            self.cycles = self.config["general"]["cycles"]
+            self.cycles = self.config.get("general").get("cycles", self.config_class.default_config["general"]["cycles"])
         self.logger.debug("Cycles set to {}.".format(self.cycles))
 
         # posts
@@ -117,7 +83,7 @@ class Parser(metaclass=Singleton):
                 self.logger.error("Please enter an inter for the number of posts")
                 sys.exit()
         else:
-            self.posts = self.config["general"]["posts"]
+            self.posts = self.config.get("general").get("posts", self.config_class.default_config["general"]["posts"])
         self.logger.debug("Posts to download set to {}".format(self.posts))
 
         # output, sets base_dir
@@ -137,6 +103,7 @@ class Parser(metaclass=Singleton):
 
         # sort
         self.sort = self.config["general"]["sort"]
+        self.sort = self.config.get("general").get("sort", self.config_class.default_config["general"]["sort"])
         if (
             self.args.sort
             and (
@@ -166,7 +133,7 @@ class Parser(metaclass=Singleton):
         self.logger.debug("Reddit sorting set to {}".format(self.sort))
 
         # time_filter
-        self.time_filter = self.config["general"]["time_filter"]
+        self.time_filter = self.config.get("general").get("time_filter", self.config_class.default_config["general"]["time_filter"])
         if (
             self.args.time_filter
             and (
@@ -195,16 +162,16 @@ class Parser(metaclass=Singleton):
             self.config["reddit"]["creds"]["client_id"] = self.args.reddit_id
         if self.args.reddit_secret:
             self.config["reddit"]["creds"]["client_secret"] = self.args.reddit_secret
-        
+
         # imgur authautologin cookie
         if self.args.imgur_cookie:
             if not self.config.get("imgur"):
                 self.config["imgur"] = {
                    "authautologin": self.args.imgur_cookie
-                }            
+                }
             else:
                 self.config["imgur"]["authautologin"] = self.args.imgur_cookie
-        
+
         # set database location
         if self.args.db_location:
             self.config["general"]["database_location"] = self.args.db_location
@@ -214,9 +181,7 @@ class Parser(metaclass=Singleton):
         else:
             self.db_location = self.config["general"]["database_location"]
 
-        # writes config to json file (used by other classes)
-        with open("./resources/config.json", "w") as config_json:
-            json.dump(self.config, config_json)
+        self.config_class.write_config()
 
         # output template
         if self.args.output_template:
@@ -225,10 +190,12 @@ class Parser(metaclass=Singleton):
             self.template = os.path.join("%(subreddit)s", "%(author)s")
 
     def setupLogger(self):
-        """ Called after logger initialised """
+        """ Called after logger initialised in Grabber"""
         self.logger = logging.getLogger(__name__)
 
     def ifNotExistMakeDir(self, dir):
         if not os.path.exists(dir):
             os.makedirs(dir)
 
+    def reload_parser(self):
+        self.config_class.load_config()
