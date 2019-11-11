@@ -44,6 +44,14 @@ def formatName(title):
     return title
 
 
+def yt_supported(url):
+    extractors = youtube_dl.extractor.gen_extractors()
+    for extractor in extractors:
+        if extractor.suitable(url) and extractor.IE_NAME != 'generic':
+            return True
+    return False
+
+
 def bar_percent(progress_raw, total_count, toolbar_width):
     if total_count > 0:
         progress = int((progress_raw/total_count) * toolbar_width)
@@ -108,8 +116,8 @@ def getSubmission(submission, parser):
             downloaded = False
             logger.info("No mathces: Reddit submission {}".format(link))
 
-        # All others are caught by youtube-dl, if still no match it's written to the log file
-        else:
+        # youtube_dl supported site
+        elif yt_supported(link):
             folder = save.get_dir(path)
             ydl_opts = {
                 'format': 'best',
@@ -125,7 +133,9 @@ def getSubmission(submission, parser):
             except Exception as e:
                 logger.error('Exception {} on {}'.format(e, link))
                 downloaded = False
-
+        else:
+            logger.info("No matches: {}".format(link))
+            downloaded = False
         if downloaded:
             db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
     else:
