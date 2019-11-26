@@ -1,15 +1,12 @@
-import praw
-from prawcore import exceptions
 import re
 import sys
 import os
 import time
-from resources.parser import Parser
 import youtube_dl
-import traceback
 import logging
 from datetime import datetime
 from resources.log_color import ColoredFormatter
+from resources.parser import Parser
 
 from resources.handlers.tenor import Tenor
 from resources.handlers.giphy import Giphy
@@ -18,6 +15,8 @@ from resources.handlers.common import Common
 
 from resources.save import Save
 from resources.db_interface import DBInterface
+
+from resources.interfaces.reddit import Reddit
 
 save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
@@ -50,14 +49,6 @@ def yt_supported(url):
         if extractor.suitable(url) and extractor.IE_NAME != 'generic':
             return True
     return False
-
-
-def bar_percent(progress_raw, total_count, toolbar_width):
-    if total_count > 0:
-        progress = int((progress_raw/total_count) * toolbar_width)
-        if progress <= toolbar_width:
-            marks = '-' * (progress) + ' ' * (toolbar_width-progress)
-            print('[{}] {}%'.format(marks, int((progress/toolbar_width)*100)), '[{}/{}]'.format(progress_raw, total_count), end='\r')
 
 
 def getSubmission(submission, parser):
@@ -143,79 +134,15 @@ def getSubmission(submission, parser):
 
 
 def feeder(subR, parser):
-    posts = parser.posts
-    sort = parser.sort
-    search = parser.search
-
     parser.reload_parser()
 
     logger.info("*****  {}  *****".format(subR))
-    try:
-        reddit = praw.Reddit(
-            client_id=config["reddit"]["creds"]["client_id"],
-            client_secret=config["reddit"]["creds"]["client_secret"],
-            user_agent=config["reddit"]["creds"]["user_agent"]
-        )
 
-        # gather submissions
-        submissions = []
-        if search:
-            logger.debug('Search term: {}'.format(search))
-            if 'u/' in subR or '/u/' in subR:
-                logger.warning('Cannot search redditors: {}'.format(subR))
-            else:
-                include_over_18 = 'off'
-                if parser.allow_nsfw:
-                    include_over_18 = 'on'
-                submissions = reddit.subreddit(subR).search(search, sort=sort.lower(),
-                    limit=int(posts), time_filter=parser.time_filter, params={'include_over_18': include_over_18})
-        elif 'reddit.com' not in subR:
-            if 'u/' in subR or '/u/' in subR:
-                if '/u/' in subR: subR = subR[3:]
-                elif 'u/'in subR: subR = subR[2:]
-                if sort == 'hot':
-                    submissions = reddit.redditor(subR).submissions.hot(limit=int(posts))
-                elif sort == 'new':
-                    submissions = reddit.redditor(subR).submissions.new(limit=int(posts))
-                elif sort == 'top':
-                    submissions = reddit.redditor(subR).submissions.top(limit=int(posts), time_filter=parser.time_filter)
-                elif sort == 'controversial':
-                    submissions = reddit.redditor(subR).submissions.controversial(limit=int(posts), time_filter=parser.time_filter)
-
-            else:
-                if sort == 'hot':
-                    submissions = reddit.subreddit(subR).hot(limit=int(posts))
-                elif sort == 'new':
-                    submissions = reddit.subreddit(subR).new(limit=int(posts))
-                elif sort == 'top':
-                    submissions = reddit.subreddit(subR).top(limit=int(posts), time_filter=parser.time_filter)
-                elif sort == 'controversial':
-                    submissions = reddit.subreddit(subR).controversial(limit=int(posts), time_filter=parser.time_filter)
-        else:
-            submissions = [reddit.submission(url=subR)]
-
-        submission_queue = []
-        for submission in submissions:
-            submission_queue.append(submission)
-            print('Loading', len(submission_queue), 'posts', end='\r')
-
-        counter = 0
-        for submission in submission_queue:
-            counter += 1
-            getSubmission(submission, parser)
-        bar_percent(counter, len(submission_queue), 50)
-        print()
-
-    except exceptions.ResponseException as err:
-        if "received 401 HTTP response" in str(err):
-            logger.error("{} Check Reddit API credentials".format(err))
-        elif "Redirect to /subreddits/search" in str(err):
-            logger.error("{} Subreddit does not exist".format(err))
-        else:
-            logger.error(str(traceback.TracebackException.from_exception(err)) + " Check username, subreddit or url: " + subR)
-    except praw.exceptions.ClientException as err:
-        logger.error(err)
-        sys.exit()
+    submission_queue = Reddit(subR, parser).queue()
+    counter = 0
+    for submission in submission_queue:
+        counter += 1
+        getSubmission(submission, parser)
 
 
 def main(parser):
@@ -274,7 +201,7 @@ if __name__ == '__main__':
     if config['general']['log_timestamp']:
         now = datetime.now()
         log_path = config['general']['log_file']
-        log_file = log_path[log_path.rfind('/')+1:]
+        log_file = log_path[log_path.rfind('/') + 1:]
         log_file = '%d-%d-%d_%d-%d-%d_%s' % (now.year, now.month, now.day, now.hour, now.minute, now.second, log_file)
     else:
         log_file = config['general']['log_file']
