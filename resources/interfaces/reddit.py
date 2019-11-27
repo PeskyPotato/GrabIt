@@ -2,10 +2,14 @@ import praw
 import logging
 import sys
 import traceback
+import re
 from prawcore import exceptions
 
 
 class Reddit():
+    user_regex = r'\/?u\/(?P<user>.+)'
+    subreddit_regex = r'\/?r\/(?P<subreddit>.+)'
+
     def __init__(self, subR, parser):
         self.logger = logging.getLogger(__name__)
 
@@ -30,7 +34,7 @@ class Reddit():
             # search term given
             if search:
                 self.logger.debug('Search term: {}'.format(search))
-                if 'u/' in self.subR or '/u/' in self.subR:
+                if re.match(self.user_regex, self.subR):
                     self.logger.warning('Cannot search redditors: {}'.format(self.subR))
                 else:
                     include_over_18 = 'off'
@@ -41,11 +45,9 @@ class Reddit():
 
             # user or subreddit given
             elif 'reddit.com' not in self.subR:
-                if 'u/' in self.subR or '/u/' in self.subR:
-                    if '/u/' in self.subR:
-                        self.subR = self.subR[3:]
-                    elif 'u/'in self.subR:
-                        self.subR = self.subR[2:]
+                if re.match(self.user_regex, self.subR):
+
+                    self.subR = re.match(self.user_regex, self.subR).group('user')
                     if sort == 'hot':
                         submissions = reddit.redditor(self.subR).submissions.hot(limit=int(posts))
                     elif sort == 'new':
@@ -56,6 +58,8 @@ class Reddit():
                         submissions = reddit.redditor(self.subR).submissions.controversial(limit=int(posts), time_filter=self.parser.time_filter)
 
                 else:
+                    if re.match(self.subreddit_regex, self.subR):
+                        self.subR = re.match(self.subreddit_regex, self.subR).group('subreddit')
                     if sort == 'hot':
                         submissions = reddit.subreddit(self.subR).hot(limit=int(posts))
                     elif sort == 'new':
