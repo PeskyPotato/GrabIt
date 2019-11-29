@@ -15,8 +15,9 @@ from resources.handlers.common import Common
 
 from resources.save import Save
 from resources.db_interface import DBInterface
-
+from resources.interfaces.reddit_instance import RedditInstance
 from resources.interfaces.reddit import Reddit
+from resources.interfaces.pushshift import Pushshift
 
 save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
@@ -128,20 +129,24 @@ def getSubmission(submission, parser):
             logger.info("No matches: {}".format(link))
             downloaded = False
         if downloaded:
-            db.insertPost(submission.permalink, submission.title, submission.created, str(submission.author), submission.url)
+            db.insertPost(submission.permalink, submission.title, submission.created_utc, str(submission.author), submission.url)
     else:
         logger.debug("Skipped submission url {}".format(submission.url))
 
 
 def feeder(subR, parser):
     parser.reload_parser()
+    RedditInstance()
 
     logger.info("*****  {}  *****".format(subR))
 
     submission_queue = Reddit(subR, parser).queue()
-    counter = 0
+    if parser.sort == 'new' and parser.posts > 1000:
+        size = min(parser.posts - len(submission_queue), 1000)
+        push_subs = Pushshift(subR, parser).queue(submission_queue[-1].created_utc, size)
+        submission_queue.extend(push_subs)
+
     for submission in submission_queue:
-        counter += 1
         getSubmission(submission, parser)
 
 

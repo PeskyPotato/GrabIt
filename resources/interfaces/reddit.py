@@ -4,6 +4,7 @@ import sys
 import traceback
 import re
 from prawcore import exceptions
+from resources.interfaces.reddit_instance import RedditInstance
 
 
 class Reddit():
@@ -20,15 +21,9 @@ class Reddit():
         posts = self.parser.posts
         sort = self.parser.sort
         search = self.parser.search
-        config = self.parser.config
 
         try:
-            reddit = praw.Reddit(
-                client_id=config["reddit"]["creds"]["client_id"],
-                client_secret=config["reddit"]["creds"]["client_secret"],
-                user_agent=config["reddit"]["creds"]["user_agent"]
-            )
-
+            reddit = RedditInstance().reddit
             submissions = []
 
             # search term given
@@ -73,9 +68,17 @@ class Reddit():
             else:
                 submissions = [reddit.submission(url=self.subR)]
 
+            # ListGenerator to list
+            submissions_queue = []
+            count = 0
+            for submission in submissions:
+                submissions_queue.append(submission)
+                count += 1
+            self.logger.debug("Reddit API submission: {}".format(count))
         except exceptions.ResponseException as err:
             if "received 401 HTTP response" in str(err):
                 self.logger.error("{} Check Reddit API credentials".format(err))
+                sys.exit(0)
             elif "Redirect to /subreddits/search" in str(err):
                 self.logger.error("{} Subreddit does not exist".format(err))
             else:
@@ -84,4 +87,4 @@ class Reddit():
             self.logger.error(err)
             sys.exit()
 
-        return submissions
+        return submissions_queue

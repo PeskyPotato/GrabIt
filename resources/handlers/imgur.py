@@ -106,7 +106,11 @@ class Imgur(Common):
 
             if not self.save_image():
                 return False
-            self.write_description(os.path.join(folder, "{}-{}.txt").format(counter, image["hash"]), image["description"])
+            try:
+                self.write_description(os.path.join(folder, ("{}-{}.txt")).format(counter, image["hash"]), image["description"])
+            except OSError as e:
+                self.logger.error("OS Error: writing desctipion {}".format(str(e)))
+                return False
             counter += 1
         logging.debug("Album complete {}".format(self.link))
         return True

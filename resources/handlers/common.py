@@ -67,6 +67,15 @@ class Common:
             else:
                 self.logger.error("{}, failed {}".format(str(e), self.link))
                 return False
+        except Exception as e:
+            if self.retries > current_retry:
+                self.logger.error("{}, retrying {}".format(str(e), self.link))
+                time.sleep(self.wait_time)
+                current_retry += 1
+                self.save_image(current_retry)
+            else:
+                self.logger.error("{}, failed {}".format(str(e), self.link))
+                return False
         return True
 
     def get_html(self, headers_param={}):
@@ -88,7 +97,7 @@ class Common:
         return page_html
 
     def format_name(self, title):
-        title = re.sub('[?/|\\\:<>*"]', '', title)
+        title = re.sub('[?/|\\\}{:<>*"]', '', title)
         if len(title) > 190:
             title = title[:120]
         return title
