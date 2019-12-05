@@ -21,7 +21,7 @@ class Singleton(type):
 
 class Parser(metaclass=Singleton):
     def __init__(self):
-        self.config_class = Config("./resources/config.json")
+        self.config_class = Config(os.path.join(os.path.dirname(__file__), "config.json"))
         self.config = self.config_class.config
 
         parser = argparse.ArgumentParser(description="Archives submissions from Reddit")

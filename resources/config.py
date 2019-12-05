@@ -19,9 +19,9 @@ class Config(metaclass=Singleton):
 
     default_config = {
             "general": {
-                "database_location": "./downloaded.db",
+                "database_location": os.path.join(os.path.dirname(__file__), "..", "downloaded.db"),
                 "logger_append": False,
-                "log_file": "./grabber.log",
+                "log_file": os.path.join(os.path.dirname(__file__), "..", "grabber.log"),
                 "log_timestamp": False,
                 "wait_time": 600,
                 "cycles": 1,
@@ -51,6 +51,7 @@ class Config(metaclass=Singleton):
 
         self.config = {}
         if not os.path.isfile(self.config_path):
+            print("Create config")
             self.create_config()
         else:
             self.load_config()
@@ -60,7 +61,7 @@ class Config(metaclass=Singleton):
         self.write_config()
 
     def write_config(self):
-        with open(self.config_path, "w") as f:
+        with open(self.config_path, "w+") as f:
             json.dump(self.config, f)
 
     def load_config(self):
