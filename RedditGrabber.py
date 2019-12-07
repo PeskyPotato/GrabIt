@@ -141,9 +141,10 @@ def feeder(subR, parser):
     logger.info("*****  {}  *****".format(subR))
 
     submission_queue = Reddit(subR, parser).queue()
-    if parser.sort == 'new' and parser.posts > 1000:
+
+    if parser.sort == 'new' and parser.posts > 1000 and not(parser.search):
         size = min(parser.posts - len(submission_queue), 1000)
-        push_subs = Pushshift(subR, parser).queue(submission_queue[-1].created_utc, size)
+        push_subs = Pushshift(subR, parser).queue_append(submission_queue[-1].created_utc, size)
         submission_queue.extend(push_subs)
 
     for submission in submission_queue:

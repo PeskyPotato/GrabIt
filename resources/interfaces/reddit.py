@@ -74,7 +74,7 @@ class Reddit():
             for submission in submissions:
                 submissions_queue.append(submission)
                 count += 1
-            self.logger.debug("Reddit API submission: {}".format(count))
+            self.logger.debug("Reddit API submission count: {}".format(count))
         except exceptions.ResponseException as err:
             if "received 401 HTTP response" in str(err):
                 self.logger.error("{} Check Reddit API credentials".format(err))
