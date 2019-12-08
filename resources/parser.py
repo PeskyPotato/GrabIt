@@ -33,13 +33,14 @@ class Parser(metaclass=Singleton):
         parser.add_argument("-p", "--posts", help="Number of posts to grab on each cycle")
         parser.add_argument("--search", help="Search for submissions in a subreddit")
         parser.add_argument("--sort", help='Sort submissions by "relevance", "comments", "hot", "new", "top", or "controversial"')
-        parser.add_argument("--time_filter", help='Filter sorted submissions by "all", "day", "hour", "month", "week", or "year"')
+        parser.add_argument("--time_filter", help='Filter sorted submissions by "all", "day", "hour", "month", "week", or "year" (search only)')
         parser.add_argument("-w", "--wait", help="Wait time in seconds between each cycle")
         parser.add_argument("-c", "--cycles", help="Number to times to repeat after wait time")
         parser.add_argument("-o", "--output", help="Set base directory")
         parser.add_argument("-t", "--output_template", help="Specify output template")
         parser.add_argument("--allow_nsfw", help="Include nsfw posts", action="store_true")
         parser.add_argument("-v", "--verbose", help="Set verbose", action="store_true")
+        parser.add_argument("--pushshift", help="Only use pushshift to grab submissions", action="store_true")
         parser.add_argument("--blacklist", help="Avoid downloading a user or subreddit")
         parser.add_argument("--reddit_id", help="Reddit client ID")
         parser.add_argument("--reddit_secret", help="Reddit client secret")
@@ -51,6 +52,7 @@ class Parser(metaclass=Singleton):
         self.subreddit = self.args.subreddit
         self.allow_nsfw = self.args.allow_nsfw
         self.verbose = self.args.verbose
+        self.pushshift = self.args.pushshift
 
     def checkArgs(self):
         # wait

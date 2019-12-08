@@ -69,6 +69,8 @@ class Pushshift():
             else:
                 posts = min(posts, 2000)  # prevents overloading api
                 self.generate_submissions(posts)
+        else:
+            self.logger.warning("--pushshift currently only supports search")
 
         return self.submissions_queue
 

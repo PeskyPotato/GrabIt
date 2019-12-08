@@ -137,15 +137,20 @@ def getSubmission(submission, parser):
 def feeder(subR, parser):
     parser.reload_parser()
     RedditInstance()
+    submission_queue = []
+    pushshift = Pushshift(subR, parser)
 
     logger.info("*****  {}  *****".format(subR))
 
-    submission_queue = Reddit(subR, parser).queue()
+    if parser.pushshift:
+        submission_queue = pushshift.queue()
+    else:
+        submission_queue = Reddit(subR, parser).queue()
 
-    if parser.sort == 'new' and parser.posts > 1000 and not(parser.search):
-        size = min(parser.posts - len(submission_queue), 1000)
-        push_subs = Pushshift(subR, parser).queue_append(submission_queue[-1].created_utc, size)
-        submission_queue.extend(push_subs)
+        if parser.sort == 'new' and parser.posts > 1000 and not(parser.search):
+            size = min(parser.posts - len(submission_queue), 4000)
+            push_subs = pushshift.queue_append(submission_queue[-1].created_utc, size)
+            submission_queue.extend(push_subs)
 
     for submission in submission_queue:
         getSubmission(submission, parser)
