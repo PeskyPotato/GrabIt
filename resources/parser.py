@@ -41,6 +41,7 @@ class Parser(metaclass=Singleton):
         parser.add_argument("--allow_nsfw", help="Include nsfw posts", action="store_true")
         parser.add_argument("-v", "--verbose", help="Set verbose", action="store_true")
         parser.add_argument("--pushshift", help="Only use pushshift to grab submissions", action="store_true")
+        parser.add_argument("--ignore_duplicate", help="Ignore duplicate media submissions", action="store_true")
         parser.add_argument("--blacklist", help="Avoid downloading a user or subreddit")
         parser.add_argument("--reddit_id", help="Reddit client ID")
         parser.add_argument("--reddit_secret", help="Reddit client secret")
@@ -53,6 +54,7 @@ class Parser(metaclass=Singleton):
         self.allow_nsfw = self.args.allow_nsfw
         self.verbose = self.args.verbose
         self.pushshift = self.args.pushshift
+        self.ignore_duplicate = self.args.ignore_duplicate
 
     def checkArgs(self):
         # wait

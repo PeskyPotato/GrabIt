@@ -97,6 +97,12 @@ class DBInterface():
                        (submission_id,))
         ret = self.c.fetchone()
         return ret[0]
+    
+    def checkDuplicate(self, url):
+        self.c.execute("""SELECT EXISTS(SELECT 1 FROM  submissions WHERE url=?)""",
+                        (url,))
+        ret = self.c.fetchone()
+        return ret[0]
 
     def insertAuthor(self, name):
         author_id = None

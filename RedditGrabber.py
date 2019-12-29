@@ -51,6 +51,23 @@ def yt_supported(url):
             return True
     return False
 
+def checkSubmission(submission):
+    regex = re.compile(
+        r'^(?:http|ftp)s?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE
+    )
+    if (not (db.checkPost(submission.permalink.split("/")[4])) and 
+        checkBlacklist(submission) and
+        re.match(regex, submission.url) and
+        (not (submission.over_18) or parser.allow_nsfw) and
+        not ((db.checkDuplicate(submission.url)) and parser.ignore_duplicate)):
+        return True
+    return False
+
 
 def getSubmission(submission, parser):
     title = submission.title
@@ -66,7 +83,8 @@ def getSubmission(submission, parser):
         r'(?:/?|[/?]\S+)$', re.IGNORECASE
     )
 
-    if not (db.checkPost(submission.permalink.split("/")[4])) and checkBlacklist(submission) and re.match(regex, link) and (not(submission.over_18) or parser.allow_nsfw):
+    # if not (db.checkPost(submission.permalink.split("/")[4])) and checkBlacklist(submission) and re.match(regex, link) and (not(submission.over_18) or parser.allow_nsfw):
+    if checkSubmission(submission):
         downloaded = True
         print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
         logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, submission.subreddit, str(submission.author)))

@@ -42,6 +42,8 @@ Below are all the optional arguments that you can use:
                                     Specify output template for download
     --allow_nsfw                    Include nsfw posts too
     -v, --verbose                   Sets verbose
+    --pushshift                     Only use pushshift to grab submissions
+    --ignore_duplicate              Ignore duplicate media submissions
     --blacklist BLACKLIST           Avoid downloading a user or subreddit
     --search SEARCH                 Search for submissions in a subreddit
     --reddit_id REDDIT_ID           Reddit client ID
