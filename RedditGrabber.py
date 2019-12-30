@@ -83,7 +83,6 @@ def getSubmission(submission, parser):
         r'(?:/?|[/?]\S+)$', re.IGNORECASE
     )
 
-    # if not (db.checkPost(submission.permalink.split("/")[4])) and checkBlacklist(submission) and re.match(regex, link) and (not(submission.over_18) or parser.allow_nsfw):
     if checkSubmission(submission):
         downloaded = True
         print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')

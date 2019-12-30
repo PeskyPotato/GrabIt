@@ -22,15 +22,16 @@ class Imgur(Common):
         self.data = {}
 
     def save(self):
+        ret = False
         self.sanitize_url()
         self.logger.debug("Saving {}".format(self.link))
         self.data = self.get_data()
         if type(self.data) is dict:
             if self.data.get('is_album'):
-                self.save_album()
+                ret = self.save_album()
             else:
-                self.save_single()
-        return False
+                ret = self.save_single()
+        return ret
 
     def sanitize_url(self):
         match = re.match(self.valid_url, self.link)
