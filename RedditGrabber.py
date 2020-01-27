@@ -2,24 +2,18 @@ import re
 import sys
 import os
 import time
-import youtube_dl
 import logging
 from datetime import datetime
 from resources.log_color import ColoredFormatter
 from resources.parser import Parser
 
-from resources.handlers.tenor import Tenor
-from resources.handlers.giphy import Giphy
-from resources.handlers.imgur import Imgur
-from resources.handlers.common import Common
-
+from resources.handlers.router import routeSubmission
 from resources.save import Save
 from resources.db_interface import DBInterface
 from resources.interfaces.reddit_instance import RedditInstance
 from resources.interfaces.reddit import Reddit
 from resources.interfaces.pushshift import Pushshift
 
-save = Save(os.getcwd(), False)
 logger = logging.getLogger(__name__)
 db = None
 
@@ -35,23 +29,8 @@ def checkBlacklist(submission):
             return False
     return True
 
-
-def formatName(title):
-    '''Removes special characters and shortens long filenames'''
-    title = re.sub('[?/|\\:<>*"]', '', title)
-    if len(title) > 211:
-        title = title[:210]
-    return title
-
-
-def yt_supported(url):
-    extractors = youtube_dl.extractor.gen_extractors()
-    for extractor in extractors:
-        if extractor.suitable(url) and extractor.IE_NAME != 'generic':
-            return True
-    return False
-
 def checkSubmission(submission):
+    ''' django URL validation regex '''
     regex = re.compile(
         r'^(?:http|ftp)s?://'  # http:// or https://
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
@@ -72,79 +51,13 @@ def checkSubmission(submission):
 def getSubmission(submission, parser):
     title = submission.title
     logger.debug("Submission url {}".format(submission.url))
-    link = submission.url
-    ''' django URL validation regex '''
-    regex = re.compile(
-        r'^(?:http|ftp)s?://'  # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
-        r'localhost|'  # localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-        r'(?::\d+)?'  # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE
-    )
 
     if checkSubmission(submission):
-        downloaded = True
         print_title = title.encode('utf-8')[:25] if len(title) > 25 else title.encode('utf-8')
         logger.info("Post: {}...({}) From: {} By: {}".format(print_title, submission.id, submission.subreddit, str(submission.author)))
-        title = formatName(title)
-        path = {'author': str(submission.author), 'subreddit': str(submission.subreddit)}
 
-        # Selftext post
-        if submission.is_self:
-            with open(os.path.join(save.get_dir(path), '{}-{}.txt'.format(str(submission.id), formatName(title))), 'a+') as f:
-                f.write(str(submission.selftext.encode('utf-8')))
+        downloaded = routeSubmission(submission)
 
-        # Link to a jpg, png, gifv, gif, jpeg
-        elif re.match(Common.valid_url, link):
-            if not Common(link, '{}-{}'.format(str(submission.id), title), save.get_dir(path)).save():
-                downloaded = False
-
-        # Imgur
-        elif re.match(Imgur.valid_url, link):
-            if not Imgur(link, title, save.get_dir(path)).save():
-                downloaded = False
-
-        # Giphy
-        elif re.match(Giphy.valid_url, link):
-            if not Giphy(link, title, save.get_dir(path)).save():
-                downloaded = False
-
-        # Tenor
-        elif re.match(Tenor.valid_url, link):
-            if not Tenor(link, title, save.get_dir(path)).save():
-                downloaded = False
-
-        # Flickr
-        elif 'flickr.com/' in link:
-            downloaded = False
-            logger.info("No mathces: No Flickr support".format(link))
-
-        # Reddit submission
-        elif 'reddit.com/r/' in link:
-            downloaded = False
-            logger.info("No mathces: Reddit submission {}".format(link))
-
-        # youtube_dl supported site
-        elif yt_supported(link):
-            folder = save.get_dir(path)
-            ydl_opts = {
-                'format': 'best',
-                'outtmpl': os.path.join(folder, '%(id)s-%(title)s.%(ext)s'),
-                'quiet': 'quiet'
-            }
-            try:
-                with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([link])
-            except youtube_dl.utils.DownloadError:
-                logger.info("No matches: {}".format(link))
-                downloaded = False
-            except Exception as e:
-                logger.error('Exception {} on {}'.format(e, link))
-                downloaded = False
-        else:
-            logger.info("No matches: {}".format(link))
-            downloaded = False
         if downloaded:
             db.insertPost(submission.permalink, submission.title, submission.created_utc, str(submission.author), submission.url)
     else:
