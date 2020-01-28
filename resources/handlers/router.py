@@ -1,4 +1,3 @@
-import youtube_dl
 import logging
 import os
 import re
@@ -8,6 +7,7 @@ from resources.save import Save
 from resources.handlers.tenor import Tenor
 from resources.handlers.giphy import Giphy
 from resources.handlers.imgur import Imgur
+from resources.handlers.youtube import YouTube
 from resources.handlers.common import Common
 
 def formatName(title):
@@ -17,12 +17,7 @@ def formatName(title):
         title = title[:210]
     return title
 
-def yt_supported(url):
-    extractors = youtube_dl.extractor.gen_extractors()
-    for extractor in extractors:
-        if extractor.suitable(url) and extractor.IE_NAME != 'generic':
-            return True
-    return False
+
 
 def routeSubmission(submission):
     logger = logging.getLogger(__name__)
@@ -69,22 +64,10 @@ def routeSubmission(submission):
         logger.info("No mathces: Reddit submission {}".format(link))
 
     # youtube_dl supported site
-    elif yt_supported(link):
-        folder = save.get_dir(path)
-        ydl_opts = {
-            'format': 'best',
-            'outtmpl': os.path.join(folder, '%(id)s-%(title)s.%(ext)s'),
-            'quiet': 'quiet'
-        }
-        try:
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([link])
-        except youtube_dl.utils.DownloadError:
-            logger.info("No matches: {}".format(link))
+    elif YouTube.yt_supported(link):
+        if not YouTube(link, title, save.get_dir(path)).save():
             downloaded = False
-        except Exception as e:
-            logger.error('Exception {} on {}'.format(e, link))
-            downloaded = False
+
     else:
         logger.info("No matches: {}".format(link))
         downloaded = False
