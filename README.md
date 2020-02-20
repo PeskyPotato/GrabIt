@@ -58,8 +58,12 @@ The default can be represented by `-t '%(subreddit)s/%(author)s'`. If you would 
 
 Below are the available tags
 
-* author: The author of the reddit submission
-* subreddit: The subreddit the submissions was in
+| Tags         | Description                       |
+| ------------ | --------------------------------- |
+| author       | The author of the submission      |
+| subreddit    | The subreddit of the submission   |
+| id           | ID of the submission              |
+| created_utc  | Time the submission was created   |
 
 ### Blacklist
 If you wish to avoid downloading a specific user or subreddit you can blacklist them. To blacklist a user add their username like so `u/spez` or to blacklist a subreddit add it without any slashes like so `AskReddit`. Below are how they would look as a valid argument.

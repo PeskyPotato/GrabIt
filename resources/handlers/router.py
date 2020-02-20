@@ -23,7 +23,12 @@ def routeSubmission(submission):
     logger = logging.getLogger(__name__)
     save = Save()
 
-    path = {'author': str(submission.author), 'subreddit': str(submission.subreddit)}
+    path = {
+        'author': str(submission.author), 
+        'subreddit': str(submission.subreddit), 
+        'id': str(submission.id), 
+        'created_utc': str(submission.created_utc)
+    }
     title = formatName(submission.title)
     link = submission.url
     downloaded = True
