@@ -12,7 +12,7 @@ from resources.parser import Parser
 
 
 class Common:
-    valid_url = r'((.)+\.(?P<ext>jpg|png|gif|jpeg|mp4))|(https?://i.reddituploads.com/(.)+)'
+    valid_url = r'((.)+\.(?P<ext>jpg|png|gif|jpeg|bmp|tiff|webp|mp4|mov|mpeg|3gp|mp3|flac|ogg))|(https?://i.reddituploads.com/(.)+)'
 
     def __init__(self, link, name, direct):
         self.logger = logging.getLogger(__name__)
