@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
     # verbose / logger
     log_path = config['general']['log_file']
-    log_path = log_path[:log_path.rfind('/')]
+    log_path = os.path.dirname(log_path)
     if not os.path.exists(log_path):
         os.makedirs(log_path)
     if config["general"]["logger_append"]:
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     if config['general']['log_timestamp']:
         now = datetime.now()
         log_path = config['general']['log_file']
-        log_file = log_path[log_path.rfind('/') + 1:]
+        log_file = os.path.basename(log_path)
         log_file = '%d-%d-%d_%d-%d-%d_%s' % (now.year, now.month, now.day, now.hour, now.minute, now.second, log_file)
     else:
         log_file = config['general']['log_file']

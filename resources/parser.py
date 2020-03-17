@@ -179,7 +179,7 @@ class Parser(metaclass=Singleton):
         # set database location
         if self.args.db_location:
             self.config["general"]["database_location"] = self.args.db_location
-            db_path = self.args.db_location[:self.args.db_location.rfind('/')]
+            db_path = os.path.dirname(self.args.db_location)
             self.ifNotExistMakeDir(db_path)
             self.db_location = self.args.db_location
         else:
