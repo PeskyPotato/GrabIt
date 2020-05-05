@@ -191,7 +191,7 @@ class Parser(metaclass=Singleton):
         if self.args.output_template:
             self.template = self.args.output_template
         else:
-            self.template = os.path.join("%(subreddit)s", "%(author)s")
+            self.template = os.path.join("%(subreddit)s", "%(author)s", "%(id)s-%(title)s.%(ext)s")
 
     def setupLogger(self):
         """ Called after logger initialised in Grabber"""

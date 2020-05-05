@@ -9,20 +9,23 @@ from bs4 import BeautifulSoup as soup
 import logging
 
 from resources.parser import Parser
+from resources.save import Save
 
 
 class Common:
     valid_url = r'((.)+\.(?P<ext>jpg|png|gif|jpeg|bmp|tiff|webp|mp4|mov|mpeg|3gp|mp3|flac|ogg))|(https?://i.reddituploads.com/(.)+)'
 
-    def __init__(self, link, name, direct):
+    def __init__(self, link, name, template_data):
         self.logger = logging.getLogger(__name__)
         opener = urllib.request.build_opener()
         opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36')]
         urllib.request.install_opener(opener)
         self.link = link
         self.name = name
-        self.direct = direct
+        self.template_data = template_data
         self.load_config()
+        self.saveDir = Save()
+        self.direct = ""
 
     def load_config(self):
         parser = Parser()
@@ -47,8 +50,8 @@ class Common:
             ext = '.jpeg'
         else:
             ext = '.' + re.search(self.valid_url, self.link).group('ext')
-        self.direct = os.path.join(self.direct, self.format_name(self.name) + ext)
-
+        self.template_data["ext"] = ext
+        self.direct = self.saveDir.get_dir(self.template_data)
         self.logger.debug("Saving {} with extension {}".format(self.link, ext))
 
         if not self.save_image():

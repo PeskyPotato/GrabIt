@@ -20,15 +20,18 @@ class Save(metaclass=Singleton):
         self.base_dir = base_dir
         self.template = template
 
-    def get_dir(self, data):
+    def get_dir(self, data, prepend=None):
         try:
             path = self.template % data
         except KeyError as e:
             self.logger.error('KeyError: Incorrect template output ' + str(e))
             sys.exit('Exiting: Incorrect template output')
-
+        
         folder = os.path.join(self.base_dir, path)
-        if not os.path.exists(folder):
-            os.makedirs(folder)
+        if prepend:
+            folder_split = os.path.split(folder)
+            folder = os.path.join(folder_split[0], prepend, folder_split[1]) 
+        if not os.path.exists(os.path.dirname(folder)):
+            os.makedirs(os.path.dirname(folder))
         self.logger.debug('Saving to ' + folder)
         return folder

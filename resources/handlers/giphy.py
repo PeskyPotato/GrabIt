@@ -8,13 +8,15 @@ from .common import Common
 class Giphy(Common):
     valid_url = r'https?://giphy\.com/gifs/((?P<name>[\w-]+)-)*(?P<id>(\w)+$)'
 
-    def __init__(self, link, name, direct):
-        self.logger = logging.getLogger(__name__)
-        super().__init__(link, name, direct)
+    def __init__(self, link, name, template_data):
+        super().__init__(link, name, template_data)
 
     def save(self):
         gif_id = self.sanitize_url()
-        self.direct = os.path.join(self.direct, '{}-{}.gif'.format(gif_id, self.format_name(self.name)))
+        temporary_data = self.template_data
+        temporary_data["ext"] = "gif"
+        temporary_data["id"] = gif_id
+        self.direct = self.saveDir.get_dir(self.template_data)
         self.logger.debug("Saving {}".format(self.link))
         if not self.save_image():
             return False

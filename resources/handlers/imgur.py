@@ -17,8 +17,8 @@ class Imgur(Common):
 
     valid_url = r'https?://(?:i\.|m\.)?imgur\.com/(?P<col>(a|(gallery)|(r/[a-z0-9]+))/)?(/)?(?P<id>[a-zA-Z0-9]+)(?P<ext>\.[^/]+)*'
 
-    def __init__(self, link, name, direct):
-        super().__init__(link, name, direct)
+    def __init__(self, link, name, template_data):
+        super().__init__(link, name, template_data)
         self.data = {}
 
     def save(self):
@@ -67,17 +67,22 @@ class Imgur(Common):
 
     def save_single(self):
         self.link = "https://imgur.com/{}{}".format(self.data["hash"], self.data["ext"])
-        direct_description = self.direct
         title = self.name
         if self.data.get("title"):
             title = self.data.get("title")
         title = self.format_name(title)
-        self.direct = os.path.join(self.direct, "{}-{}{}".format(title, self.data["hash"], self.data["ext"]))
+        temporary_template = self.template_data
+        temporary_template["ext"] = "txt"
+        temporary_template["id"] = self.data["hash"]
+        direct_description = self.saveDir.get_dir(temporary_template)
+        temporary_template["ext"] = self.data["ext"]
+        self.direct = self.saveDir.get_dir(temporary_template)
+
         self.logger.debug("Saved single image {}".format(self.link))
 
         if not self.save_image():
             return False
-        self.write_description(os.path.join(direct_description, "{}-{}.txt".format(title, self.data["hash"])), self.data["description"])
+        self.write_description(direct_description, self.data["description"])
         return True
 
     def save_album(self):
@@ -96,19 +101,23 @@ class Imgur(Common):
             if not self.save_single():
                 return False
             return True
-        folder = os.path.join(self.direct, folder_name)
-        if not os.path.exists(folder):
-            os.makedirs(folder)
 
         counter = 1
         for image in images:
             self.link = "https://imgur.com/{}{}".format(image["hash"], image["ext"])
-            self.direct = os.path.join(folder, "{}-{}{}".format(counter, image["hash"], image["ext"]))
-
+            temporary_template = self.template_data
+            temporary_template["ext"] = image["ext"]
+            temporary_template["id"] = image["hash"]
+            temporary_template["title"] = counter
+            self.direct = self.saveDir.get_dir(temporary_template, prepend=folder_name)
             if not self.save_image():
                 return False
             try:
-                self.write_description(os.path.join(folder, ("{}-{}.txt")).format(counter, image["hash"]), image["description"])
+                temporary_template["ext"] = "txt"
+                temporary_template["id"] = self.data["hash"]
+                temporary_template["title"] = counter
+                direct_description = self.saveDir.get_dir(temporary_template, prepend=folder_name)
+                self.write_description(direct_description, image["description"])
             except OSError as e:
                 self.logger.error("OS Error: writing desctipion {}".format(str(e)))
                 return False

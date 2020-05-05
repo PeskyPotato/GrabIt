@@ -23,39 +23,42 @@ def routeSubmission(submission):
     logger = logging.getLogger(__name__)
     save = Save()
 
-    path = {
-        'author': str(submission.author), 
-        'subreddit': str(submission.subreddit), 
-        'id': str(submission.id), 
-        'created_utc': str(submission.created_utc)
-    }
     title = formatName(submission.title)
     link = submission.url
     downloaded = True
 
+    path = {
+        'author': str(submission.author), 
+        'subreddit': str(submission.subreddit), 
+        'id': str(submission.id), 
+        'created_utc': str(submission.created_utc),
+        'title': title,
+        'ext': 'txt'
+    }
+
     # Selftext post
     if submission.is_self:
-        with open(os.path.join(save.get_dir(path), '{}-{}.txt'.format(str(submission.id), formatName(title))), 'a+') as f:
+        with open(save.get_dir(path), 'a+') as f:
             f.write(str(submission.selftext.encode('utf-8')))
 
     # Link to a jpg, png, gifv, gif, jpeg
     elif re.match(Common.valid_url, link):
-        if not Common(link, '{}-{}'.format(str(submission.id), title), save.get_dir(path)).save():
+        if not Common(link, '{}-{}'.format(str(submission.id), title), path).save():
             downloaded = False
 
     # Imgur
     elif re.match(Imgur.valid_url, link):
-        if not Imgur(link, title, save.get_dir(path)).save():
+        if not Imgur(link, title, path).save():
             downloaded = False
 
     # Giphy
     elif re.match(Giphy.valid_url, link):
-        if not Giphy(link, title, save.get_dir(path)).save():
+        if not Giphy(link, title, path).save():
             downloaded = False
 
     # Tenor
     elif re.match(Tenor.valid_url, link):
-        if not Tenor(link, title, save.get_dir(path)).save():
+        if not Tenor(link, title, path).save():
             downloaded = False
 
     # Flickr
@@ -70,7 +73,7 @@ def routeSubmission(submission):
 
     # youtube_dl supported site
     elif YouTube.yt_supported(link):
-        if not YouTube(link, title, save.get_dir(path)).save():
+        if not YouTube(link, title, path).save():
             downloaded = False
 
     else:
