@@ -1,6 +1,5 @@
 import re
 import json
-import os
 import logging
 
 from .common import Common
@@ -75,7 +74,7 @@ class Imgur(Common):
         temporary_template["ext"] = "txt"
         temporary_template["id"] = self.data["hash"]
         direct_description = self.saveDir.get_dir(temporary_template)
-        temporary_template["ext"] = self.data["ext"]
+        temporary_template["ext"] = self.data["ext"].replace(".", "")
         self.direct = self.saveDir.get_dir(temporary_template)
 
         self.logger.debug("Saved single image {}".format(self.link))
@@ -106,7 +105,7 @@ class Imgur(Common):
         for image in images:
             self.link = "https://imgur.com/{}{}".format(image["hash"], image["ext"])
             temporary_template = self.template_data
-            temporary_template["ext"] = image["ext"]
+            temporary_template["ext"] = image["ext"].replace(".", "")
             temporary_template["id"] = image["hash"]
             temporary_template["title"] = counter
             self.direct = self.saveDir.get_dir(temporary_template, prepend=folder_name)

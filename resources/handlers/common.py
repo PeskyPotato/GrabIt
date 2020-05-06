@@ -1,5 +1,4 @@
 import re
-import os
 import time
 import urllib.request
 from urllib.request import urlopen, Request, urlretrieve
@@ -44,12 +43,12 @@ class Common:
 
     def save(self):
         if '.gifv' in self.link:
-            ext = '.mp4'
+            ext = 'mp4'
             self.link = self.link.replace('gifv', 'mp4')
         elif 'i.reddituploads.com' in self.link:
-            ext = '.jpeg'
+            ext = 'jpeg'
         else:
-            ext = '.' + re.search(self.valid_url, self.link).group('ext')
+            ext = re.search(self.valid_url, self.link).group('ext')
         self.template_data["ext"] = ext
         self.direct = self.saveDir.get_dir(self.template_data)
         self.logger.debug("Saving {} with extension {}".format(self.link, ext))
