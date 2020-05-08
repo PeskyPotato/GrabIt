@@ -108,14 +108,14 @@ class Imgur(Common):
             temporary_template["ext"] = image["ext"].replace(".", "")
             temporary_template["id"] = image["hash"]
             temporary_template["title"] = counter
-            self.direct = self.saveDir.get_dir(temporary_template, prepend=folder_name)
+            self.direct = self.saveDir.get_dir(temporary_template, prepend_path=folder_name, prepend_name=str(counter) + "-")
             if not self.save_image():
                 return False
             try:
                 temporary_template["ext"] = "txt"
                 temporary_template["id"] = self.data["hash"]
                 temporary_template["title"] = counter
-                direct_description = self.saveDir.get_dir(temporary_template, prepend=folder_name)
+                direct_description = self.saveDir.get_dir(temporary_template, prepend_path=folder_name)
                 self.write_description(direct_description, image["description"])
             except OSError as e:
                 self.logger.error("OS Error: writing desctipion {}".format(str(e)))
