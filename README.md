@@ -54,7 +54,9 @@ Below are all the optional arguments that you can use:
 ### Output Template
 By default the program saves by subreddit then user, if you would like to change this you can specify an output template.
 
-The default can be represented by `-t '%(subreddit)s/%(author)s'`. If you would like to only save by author, you can do the following `-t '%(author)s'`. Note, this is only a way to change the layout within the download location, if you wish to change the download location itself specify that with `--output`.
+The default can be represented by `-t '%(subreddit)s/%(author)s/%(id)s-%(title)s.%(ext)s'`. If you would like to only save by author and name the file by title, you can do the following `-t '%(author)s/%(title)s.%(ext)s'`.
+
+Note, if you ues this parameter you must specify a template for the filename and use `%(ext)s` if you wish the files to save properly. If you only wish to change the output directory you can use the `--output` parameter.
 
 Below are the available tags
 
@@ -64,6 +66,8 @@ Below are the available tags
 | subreddit    | The subreddit of the submission   |
 | id           | ID of the submission              |
 | created_utc  | Time the submission was created   |
+| title        | Title of the submission           |
+| ext          | File extension                    |     
 
 ### Blacklist
 If you wish to avoid downloading a specific user or subreddit you can blacklist them. To blacklist a user add their username like so `u/spez` or to blacklist a subreddit add it without any slashes like so `AskReddit`. Below are how they would look as a valid argument.
