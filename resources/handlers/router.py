@@ -7,8 +7,10 @@ from resources.save import Save
 from resources.handlers.tenor import Tenor
 from resources.handlers.giphy import Giphy
 from resources.handlers.imgur import Imgur
+from resources.handlers.redgifs import Redgifs
 from resources.handlers.youtube import YouTube
 from resources.handlers.common import Common
+
 
 def formatName(title):
     '''Removes special characters and shortens long filenames'''
@@ -16,7 +18,6 @@ def formatName(title):
     if len(title) > 211:
         title = title[:210]
     return title
-
 
 
 def routeSubmission(submission):
@@ -28,9 +29,9 @@ def routeSubmission(submission):
     downloaded = True
 
     path = {
-        'author': str(submission.author), 
-        'subreddit': str(submission.subreddit), 
-        'id': str(submission.id), 
+        'author': str(submission.author),
+        'subreddit': str(submission.subreddit),
+        'id': str(submission.id),
         'created_utc': str(submission.created_utc),
         'title': title,
         'ext': 'txt'
@@ -59,6 +60,11 @@ def routeSubmission(submission):
     # Tenor
     elif re.match(Tenor.valid_url, link):
         if not Tenor(link, title, path).save():
+            downloaded = False
+
+    # Redgifs
+    elif re.match(Redgifs.valid_url, link):
+        if not Redgifs(link, title, path).save():
             downloaded = False
 
     # Flickr
