@@ -158,8 +158,13 @@ class Parser(metaclass=Singleton):
 
         # blacklist
         if self.args.blacklist:
-            self.config["reddit"]["blacklist"].append(self.args.blacklist)
-            self.logger.info('Added "{}" to the blacklist'.format(self.args.blacklist))
+            if self.args.blacklist in self.config["reddit"]["blacklist"]:
+                self.config["reddit"]["blacklist"].remove(self.args.blacklist)
+                self.logger.info('Removed "{}" from the blacklist'.format(self.args.blacklist))
+            else:
+                self.config["reddit"]["blacklist"].append(self.args.blacklist)
+                self.logger.info('Added "{}" to the blacklist'.format(self.args.blacklist))
+            self.logger.info("Current blacklist: {}".format(self.config["reddit"]["blacklist"]))
 
         # reddit api credentials
         if self.args.reddit_id:

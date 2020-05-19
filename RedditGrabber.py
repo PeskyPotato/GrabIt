@@ -24,10 +24,15 @@ def checkBlacklist(submission):
             if item.split('/')[-1] == submission.author:
                 logger.debug('Blocked user ' + item.split('/')[-1])
                 return False
+        elif ('r/' in item or '/r/' in item):
+            if item.split('/')[-1] == submission.subreddit:
+                logger.debug('Blocked subreddit ' + item.split('/')[-1])
+                return False
         elif item == submission.subreddit:
             logger.debug('Blocked subreddit ' + item)
             return False
     return True
+
 
 def checkSubmission(submission):
     ''' django URL validation regex '''

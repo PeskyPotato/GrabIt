@@ -70,10 +70,10 @@ Below are the available tags
 | ext          | File extension                    |     
 
 ### Blacklist
-If you wish to avoid downloading a specific user or subreddit you can blacklist them. To blacklist a user add their username like so `u/spez` or to blacklist a subreddit add it without any slashes like so `AskReddit`. Below are how they would look as a valid argument.
+If you wish to avoid downloading a specific user or subreddit you can blacklist them. Below is an example of how you would blacklist the user "Gallowboob" and the subreddit "r/Documentaries".
 
-    python3 RedditGrabber.py --blacklist u/spez
-    python3 RedditGrabber.py --blacklist AskReddit
+    python3 RedditGrabber.py --blacklist u/GallowBoob
+    python3 RedditGrabber.py --blacklist r/Documentaries
 
 ### Search
 You can search a subreddit using keywords along with sorting and time filters. Below are examples of a simple search on r/all for "breakfast cereal".
