@@ -1,9 +1,9 @@
 import re
 import time
+import requests
 import urllib.request
-from urllib.request import urlopen, Request, urlretrieve
+from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
-from http.client import RemoteDisconnected
 from bs4 import BeautifulSoup as soup
 import logging
 
@@ -59,16 +59,11 @@ class Common:
 
     def save_image(self, current_retry=1):
         try:
-            urlretrieve(self.link, self.direct)
-        except (URLError, RemoteDisconnected, ConnectionResetError) as e:
-            if self.retries > current_retry:
-                self.logger.warning("{}, retrying {}".format(str(e), self.link))
-                time.sleep(self.wait_time)
-                current_retry += 1
-                self.save_image(current_retry)
-            else:
-                self.logger.error("{}, failed {}".format(str(e), self.link))
-                return False
+            with requests.get(self.link, stream=True) as r:
+                r.raise_for_status()
+                with open(self.direct, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
         except Exception as e:
             if self.retries > current_retry:
                 self.logger.error("{}, retrying {}".format(str(e), self.link))

@@ -8,6 +8,7 @@ from resources.handlers.tenor import Tenor
 from resources.handlers.giphy import Giphy
 from resources.handlers.imgur import Imgur
 from resources.handlers.redgifs import Redgifs
+from resources.handlers.gfycat import Gfycat
 from resources.handlers.youtube import YouTube
 from resources.handlers.common import Common
 
@@ -27,7 +28,6 @@ def routeSubmission(submission):
     title = formatName(submission.title)
     link = submission.url
     downloaded = True
-
     path = {
         'author': str(submission.author),
         'subreddit': str(submission.subreddit),
@@ -65,6 +65,11 @@ def routeSubmission(submission):
     # Redgifs
     elif re.match(Redgifs.valid_url, link):
         if not Redgifs(link, title, path).save():
+            downloaded = False
+
+    # Gfycat
+    elif re.match(Gfycat.valid_url, link):
+        if not Gfycat(link, title, path).save():
             downloaded = False
 
     # Flickr
