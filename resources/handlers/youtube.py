@@ -17,8 +17,10 @@ class YouTube(Common):
         downloaded = True
         ydl_opts = {
             'format': 'best',
+            'retries': 10,
             'outtmpl': os.path.join(os.path.dirname(self.saveDir.get_dir(self.template_data)), "%(id)s-%(title)s.%(ext)s"),
-            'quiet': 'quiet'
+            'quiet': 'quiet',
+            'progress_hooks': [self.progress],
         }
         try:
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -31,6 +33,10 @@ class YouTube(Common):
             downloaded = False
 
         return downloaded
+
+    def progress(self, d):
+        if d["status"] == "downloading":
+            print(d["_percent_str"], end="\r")
 
     @staticmethod
     def yt_supported(url):

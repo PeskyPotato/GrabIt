@@ -1,6 +1,7 @@
 import json
 
 from .common import Common
+from .youtube import YouTube
 
 
 class Redgifs(Common):
@@ -16,7 +17,7 @@ class Redgifs(Common):
                                     {"type": "application/ld+json"}).text)
         self.link = data["video"]["contentUrl"]
         self.valid_url = super().valid_url
-        return super().save()
+        return YouTube(self.link, self.name, self.template_data).save()
 
     def sanitize_url(self):
         pass
