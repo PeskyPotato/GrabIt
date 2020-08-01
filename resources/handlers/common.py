@@ -87,7 +87,7 @@ class Common:
         )
         try:
             page_html = urlopen(req).read()
-            page_html = soup(page_html, "lxml")
+            page_html = soup(page_html, "html5lib")
         except (HTTPError, URLError) as e:
             page_html = None
             self.logger.error('{} - Link {}'.format(str(e), self.link))

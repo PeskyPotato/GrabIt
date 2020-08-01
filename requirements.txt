@@ -1,4 +1,4 @@
 praw
 BeautifulSoup4
 youtube_dl
-lxml
+html5lib
