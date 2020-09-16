@@ -153,10 +153,10 @@ if __name__ == '__main__':
         log_file = config['general']['log_file']
     try:
         logging.basicConfig(level=logging.DEBUG,
+                            handlers=[logging.FileHandler(log_file, filemode, 'utf-8')],
                             format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                            datefmt='%m-%d %H:%M',
-                            filename=log_file,
-                            filemode=filemode)
+                            datefmt='%m-%d %H:%M'
+                            )
     except IsADirectoryError:
         print('Log file not set correctly, check log_file in config')
         sys.exit()
