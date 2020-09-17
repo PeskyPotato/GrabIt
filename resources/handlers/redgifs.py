@@ -12,6 +12,8 @@ class Redgifs(Common):
 
     def save(self):
         page = self.get_html()
+        if not page:
+            return False
         self.logger.debug("Fetching redgifs json data")
         data = json.loads(page.find("script",
                                     {"type": "application/ld+json"}).text)
