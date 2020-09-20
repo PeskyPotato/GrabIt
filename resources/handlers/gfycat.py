@@ -1,7 +1,4 @@
-import requests
-
 from .common import Common
-from .youtube import YouTube
 
 
 class Gfycat(Common):
@@ -12,6 +9,8 @@ class Gfycat(Common):
 
     def save(self):
         page = self.get_html()
+        if not page:
+            return False
         url = page.find("meta", {"property": "og:video"}).get("content", "")
         self.link = url
         self.valid_url = super().valid_url
