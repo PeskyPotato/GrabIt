@@ -11,6 +11,7 @@ from resources.handlers.redgifs import Redgifs
 from resources.handlers.gfycat import Gfycat
 from resources.handlers.youtube import YouTube
 from resources.handlers.common import Common
+from resources.handlers.redditgallery import RedditGallery
 
 
 def formatName(title):
@@ -72,6 +73,9 @@ def routeSubmission(submission):
         if not Gfycat(link, title, path).save():
             downloaded = False
 
+    elif re.match(RedditGallery.valid_url, link):
+        if not RedditGallery(link, title, path).save():
+            downloaded = False
     # Flickr
     elif 'flickr.com/' in link:
         downloaded = False
