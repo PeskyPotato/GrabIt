@@ -45,7 +45,7 @@ class Parser(metaclass=Singleton):
         parser.add_argument("--blacklist", help="Avoid downloading a user or subreddit")
         parser.add_argument("--reddit_id", help="Reddit client ID")
         parser.add_argument("--reddit_secret", help="Reddit client secret")
-        parser.add_argument("--imgur_cookie", help="Imgur authautologin cookie")
+        parser.add_argument("--imgur_id", help="Imgur Client ID")
         parser.add_argument("--db_location", help="Set location of database file")
 
         self.args = parser.parse_args()
@@ -172,14 +172,14 @@ class Parser(metaclass=Singleton):
         if self.args.reddit_secret:
             self.config["reddit"]["creds"]["client_secret"] = self.args.reddit_secret
 
-        # imgur authautologin cookie
-        if self.args.imgur_cookie:
+        # imgur client ID
+        if self.args.imgur_id:
             if not self.config.get("imgur"):
                 self.config["imgur"] = {
-                   "authautologin": self.args.imgur_cookie
+                   "client_id": self.args.imgur_id
                 }
             else:
-                self.config["imgur"]["authautologin"] = self.args.imgur_cookie
+                self.config["imgur"]["client_id"] = self.args.imgur_id
 
         # set database location
         if self.args.db_location:
