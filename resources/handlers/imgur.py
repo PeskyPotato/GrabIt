@@ -77,7 +77,10 @@ class Imgur(Common):
                 f.write(description)
 
     def save_single(self):
-        self.link = self.data["media"][0]["url"]
+        self.link = self.data.get("media")
+        if not self.link:
+            return False
+        self.link = self.link[0]["url"]
         title = self.name
         if self.data.get("title"):
             title = self.data.get("title")
