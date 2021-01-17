@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 
 from resources.save import Save
@@ -12,6 +11,7 @@ from resources.handlers.gfycat import Gfycat
 from resources.handlers.youtube import YouTube
 from resources.handlers.common import Common
 from resources.handlers.redditgallery import RedditGallery
+from resources.handlers.reddithandler import RedditHandler
 
 
 def formatName(title):
@@ -79,12 +79,17 @@ def routeSubmission(submission):
     # Flickr
     elif 'flickr.com/' in link:
         downloaded = False
-        logger.info("No mathces: No Flickr support".format(link))
+        logger.info("No mathces: No Flickr support {}".format(link))
 
     # Reddit submission
-    elif 'reddit.com/r/' in link:
+    elif re.match(RedditHandler.valid_url, link):
         downloaded = False
-        logger.info("No mathces: Reddit submission {}".format(link))
+        logger.debug("Fetching crosspost {}".format(link))
+        new_submission = RedditHandler(link, title, path).save()
+        if not new_submission:
+            downloaded = False
+        if not routeSubmission(new_submission):
+            downloaded = False
 
     # youtube_dl supported site
     elif YouTube.yt_supported(link):
