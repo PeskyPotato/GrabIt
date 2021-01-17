@@ -5,7 +5,7 @@ from .youtube import YouTube
 
 
 class Redgifs(Common):
-    valid_url = r'https?://redgifs\.com/watch/((?P<name>[\w-]+))'
+    valid_url = r'https?://(?:www\.)redgifs\.com/watch/((?P<name>[\w-]+))'
 
     def __init__(self, link, name, template_data):
         super().__init__(link, name, template_data)

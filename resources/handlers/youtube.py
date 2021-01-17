@@ -16,7 +16,7 @@ class YouTube(Common):
     def save(self):
         downloaded = True
         ydl_opts = {
-            'format': 'bestvideo+bestaudio',
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
             'retries': 10,
             'outtmpl': os.path.join(os.path.dirname(self.saveDir.get_dir(self.template_data)), "%(id)s-%(title)s.%(ext)s"),
             'quiet': 'quiet',
