@@ -1,6 +1,8 @@
 import os
 import sys
 import logging
+import re
+
 
 class Singleton(type):
     def __init__(self, *args, **kwargs):
@@ -34,4 +36,15 @@ class Save(metaclass=Singleton):
         if not os.path.exists(os.path.dirname(folder)):
             os.makedirs(os.path.dirname(folder))
         self.logger.debug('Saving to ' + folder)
-        return folder
+
+        # Get safe filename
+        base, raw_name = os.path.split(folder)
+        raw_name_file, raw_name_ext = os.path.splitext(raw_name)
+        raw_name_file = self.format_name(raw_name_file)
+        return os.path.join(base, raw_name_file + raw_name_ext)
+
+    def format_name(self, title):
+        title = re.sub('[?/|\\\}{:<>*"]', '', title)
+        if len(title.encode("utf8")) > 190:
+            title = title.encode("utf8")[:190].decode("utf8", 'ignore')
+        return title
