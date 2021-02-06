@@ -11,7 +11,10 @@ class Gfycat(Common):
         page = self.get_html()
         if not page:
             return False
-        url = page.find("meta", {"property": "og:video"}).get("content", "")
+        url = page.find("meta", {"property": "og:video"})
+        if not url:
+            return False
+        url = url.get("content", "")
         self.link = url
         self.valid_url = super().valid_url
         return super().save()
