@@ -59,7 +59,7 @@ class Common:
 
     def save_image(self, current_retry=1):
         try:
-            with requests.get(self.link, stream=True) as r:
+            with requests.get(self.link, stream=True, timeout=20) as r:
                 r.raise_for_status()
                 with open(self.direct, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=8192):
