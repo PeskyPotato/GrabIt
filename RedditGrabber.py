@@ -88,8 +88,10 @@ def feeder(subR, parser):
             submission_queue.extend(push_subs)
 
     for submission in submission_queue:
-        getSubmission(submission, parser)
-
+        try:
+            getSubmission(submission, parser)
+        except Exception as e:
+            logger.info('Post "{}" failed to download. {}'.format(subR, e))
 
 def main(parser):
     # subreddit/user/text file
