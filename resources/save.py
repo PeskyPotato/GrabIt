@@ -44,7 +44,7 @@ class Save(metaclass=Singleton):
         return os.path.join(base, raw_name_file + raw_name_ext)
 
     def format_name(self, title):
-        title = re.sub('[?/|\\\}{:<>*"]', '', title)
+        title = re.sub('[?/|\\\}{:<>*".]', '', title)
         if len(title.encode("utf8")) > 190:
             title = title.encode("utf8")[:190].decode("utf8", 'ignore')
         return title
